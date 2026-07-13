@@ -3,6 +3,9 @@ import { siteConfig } from "@/lib/site";
 import { getAllCardSlugs } from "@/data/cards";
 import { templates } from "@/data/templates";
 
+// Required for `output: 'export'` — emit sitemap.xml at build time.
+export const dynamic = "force-static";
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = siteConfig.url;
   const staticRoutes = ["", "/features", "/templates", "/pricing", "/contact"].map(
