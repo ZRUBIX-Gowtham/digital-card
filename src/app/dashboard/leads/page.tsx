@@ -9,6 +9,8 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { LeadsList } from "@/components/dashboard/LeadsList";
 import { markAllLeadsReadAction } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Leads" };
 
 export default async function LeadsPage() {

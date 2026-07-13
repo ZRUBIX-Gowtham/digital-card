@@ -15,6 +15,7 @@ import { getCardFromStore } from "@/lib/cards-store";
 import { countUnreadLeads } from "@/lib/leads-store";
 import { getTemplate } from "@/data/templates";
 
+export const dynamic = "force-dynamic";
 import { Container } from "@/components/ui/Container";
 import { ShareLink } from "@/components/dashboard/ShareLink";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";

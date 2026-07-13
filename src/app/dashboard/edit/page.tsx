@@ -6,6 +6,7 @@ import { countUnreadLeads } from "@/lib/leads-store";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { CardEditor } from "@/components/dashboard/CardEditor";
 
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Edit card",

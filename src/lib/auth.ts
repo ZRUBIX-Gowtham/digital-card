@@ -1,30 +1,31 @@
+import { cookies } from "next/headers";
 import { getUserBySlug, type DummyUser } from "@/data/users";
-import { users } from "@/data/users";
 
+/**
+ * Minimal cookie-based session for the dummy auth. The cookie simply stores the
+ * logged-in user's cardSlug. Phase 2 swaps this for a real signed session.
+ */
 const COOKIE = "zx_session";
-
-function isServer() {
-  return typeof window === "undefined";
-}
+const MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
 export async function getSession(): Promise<DummyUser | null> {
-  if (isServer()) {
-    // During static build, return the first user so dashboard pages render
-    return users[0];
-  }
-  const slug = localStorage.getItem(COOKIE);
-  if (!slug) return users[0]; // fallback to dummy user
-  return getUserBySlug(slug) ?? users[0];
+  const store = await cookies();
+  const slug = store.get(COOKIE)?.value;
+  if (!slug) return null;
+  return getUserBySlug(slug) ?? null;
 }
 
 export async function createSession(cardSlug: string): Promise<void> {
-  if (!isServer()) {
-    localStorage.setItem(COOKIE, cardSlug);
-  }
+  const store = await cookies();
+  store.set(COOKIE, cardSlug, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: MAX_AGE,
+  });
 }
 
 export async function destroySession(): Promise<void> {
-  if (!isServer()) {
-    localStorage.removeItem(COOKIE);
-  }
+  const store = await cookies();
+  store.delete(COOKIE);
 }
