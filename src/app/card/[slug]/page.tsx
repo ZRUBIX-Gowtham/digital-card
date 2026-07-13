@@ -1,4 +1,10 @@
 import { permanentRedirect } from "next/navigation";
+import { getAllCardSlugsFromStore } from "@/lib/cards-store";
+
+export function generateStaticParams() {
+  const slugs = getAllCardSlugsFromStore();
+  return slugs.map((slug) => ({ slug }));
+}
 
 /**
  * Legacy route. Cards now live at the personalized URL `/{slug}`, so we

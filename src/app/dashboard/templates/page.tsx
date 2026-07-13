@@ -10,8 +10,6 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { CardRenderer } from "@/components/card-templates/registry";
 import { TemplateGrid, type PickerItem } from "@/components/dashboard/TemplatePicker";
 
-export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = { title: "Change template" };
 
 export default async function TemplatesPage() {

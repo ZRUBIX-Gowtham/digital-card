@@ -20,8 +20,6 @@ import { getTemplate } from "@/data/templates";
 import { Container } from "@/components/ui/Container";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 
-export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = { title: "Analytics" };
 
 const ACTION_META: Record<EventType, { label: string; icon: typeof Phone }> = {

@@ -1,37 +1,30 @@
-import "server-only";
-import fs from "node:fs";
-import path from "node:path";
 import { cards as seedCards } from "@/data/cards";
 import type { CardData } from "@/types/card";
 
-/**
- * Phase-1 file-based persistence for cards. Reads/writes `.data/cards.json`,
- * seeded from `src/data/cards.ts` on first use. This makes editor changes real
- * (the public `/{slug}` page reflects saves) while running locally with no DB.
- *
- * Phase 2 replaces these four functions with database queries — callers and the
- * `CardData` contract stay the same.
- *
- * Note: works with `next dev` and `next start` (Node runtime with a writable
- * filesystem). A serverless/read-only host would need the DB swap.
- */
-const DATA_DIR = path.join(process.cwd(), ".data");
-const FILE = path.join(DATA_DIR, "cards.json");
+const STORAGE_KEY = "zx_cards";
+
+function isServer() {
+  return typeof window === "undefined";
+}
 
 function readAll(): CardData[] {
+  if (isServer()) return seedCards;
+  
   try {
-    const raw = fs.readFileSync(FILE, "utf8");
-    const parsed = JSON.parse(raw) as CardData[];
-    if (Array.isArray(parsed) && parsed.length) return parsed;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as CardData[];
+      if (Array.isArray(parsed) && parsed.length) return parsed;
+    }
   } catch {
-    /* not seeded yet */
+    /* ignore */
   }
   return seedCards;
 }
 
 function writeAll(cards: CardData[]): void {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(FILE, JSON.stringify(cards, null, 2), "utf8");
+  if (isServer()) return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
 }
 
 export function getCardFromStore(slug: string): CardData | undefined {
@@ -50,10 +43,6 @@ export function saveCardToStore(card: CardData): void {
   writeAll(all);
 }
 
-/**
- * Increment and persist the public view count for a card, returning the new
- * total. No-op (returns undefined) if the slug is unknown.
- */
 export function incrementCardViews(slug: string): number | undefined {
   const all = readAll();
   const idx = all.findIndex((c) => c.slug === slug);
