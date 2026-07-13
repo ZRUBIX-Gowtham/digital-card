@@ -1,26 +1,342 @@
 @import "tailwindcss";
 
+/* Enable class-based dark mode: `.dark` on <html> flips the theme.
+   (Tailwind v4 defaults to prefers-color-scheme; we want an explicit toggle.) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   digitalsite Digital Card — Clean corporate / minimal design system
+   ============================================================ */
+
 :root {
+  /* Surfaces — pure white, glassy design system */
   --background: #ffffff;
-  --foreground: #171717;
+  --surface: #ffffff;      /* pure white — panels, cards */
+  --surface-2: #f1f5f9;    /* slate-100 — inputs, wells, tab tracks */
+  --surface-hover: #f1f5f9;/* faint tint, interactive feedback only */
+  --foreground: #0f172a;   /* slate-900 */
+  --muted: #64748b;        /* slate-500 */
+  --border: #e6e9f0;       /* very light hairline */
+
+  /* Brand — digitalsite indigo/blue */
+  --brand: #4f46e5;        /* indigo-600 */
+  --brand-600: #4f46e5;
+  --brand-700: #4338ca;
+  --brand-50: #eef2ff;
+  --brand-100: #e0e7ff;
+  --accent: #0ea5e9;       /* sky-500 for subtle accents */
+
+  --ring: #c7d2fe;         /* indigo-200 */
+  --radius: 0.9rem;
+}
+
+/* Explicit light-theme scope. Applied around the public card / editor preview
+   so a card always renders in its own colours, independent of the app chrome's
+   light/dark toggle (the creator, not the visitor, decides the card's look). */
+.theme-light {
+  color-scheme: light;
+  --background: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-hover: #f1f5f9;
+  --foreground: #0f172a;
+  --muted: #64748b;
+  --border: #e6e9f0;
+  --brand: #4f46e5;
+  --brand-600: #4f46e5;
+  --brand-700: #4338ca;
+  --brand-50: #eef2ff;
+  --brand-100: #e0e7ff;
+  --accent: #0ea5e9;
+  --ring: #c7d2fe;
+}
+
+/* ---- Dark theme (pure black) — applied when <html class="dark"> ---- */
+.dark {
+  color-scheme: dark;
+  --background: #000000;   /* pure black */
+  --surface: #0a0a0c;      /* near-black panels / cards */
+  --surface-2: #16161a;    /* inputs, wells, tab tracks */
+  --surface-hover: #1e1e25;/* interactive feedback */
+  --foreground: #f4f6fb;   /* near-white text */
+  --muted: #9aa4b2;        /* slate-400/500 */
+  --border: #26262e;       /* subtle hairline on black */
+
+  --brand: #6366f1;        /* indigo-500 reads better on black */
+  --brand-600: #6366f1;
+  --brand-700: #4f46e5;
+  --brand-50: #17172b;     /* deep indigo tint used as light bg in light mode */
+  --brand-100: #21213f;
+  --accent: #38bdf8;
+
+  --ring: #3730a3;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-hover: var(--surface-hover);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-brand: var(--brand);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-700: var(--brand-700);
+  --color-accent: var(--accent);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-inter);
+  --radius-card: var(--radius);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Offset anchored sections so the sticky header (h-16 = 4rem) doesn't
+   cover the heading when navigating via the navbar section links. */
+section[id] {
+  scroll-margin-top: 5rem;
+}
+
+html {
+  background: var(--background);
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Soft coloured ambient wash over a white base. Fixed so it stays put while
+     scrolling — this is what the frosted-glass panels refract to look glassy.
+     Section bands are kept transparent so this shows through the whole page. */
+  background:
+    radial-gradient(55rem 38rem at 12% -8%, rgba(99, 102, 241, 0.18), transparent 60%),
+    radial-gradient(48rem 40rem at 100% 2%, rgba(14, 165, 233, 0.15), transparent 58%),
+    radial-gradient(50rem 42rem at 88% 108%, rgba(168, 85, 247, 0.14), transparent 60%),
+    radial-gradient(55rem 45rem at 20% 115%, rgba(79, 70, 229, 0.14), transparent 62%),
+    var(--background);
+  background-attachment: fixed;
+}
+
+/* Dark theme: pure, flat black — no coloured wash, no blue mix. */
+.dark body {
+  background: var(--background);
+  background-attachment: fixed;
+}
+
+/* Hide the dotted grid decoration entirely in dark mode. */
+.dark .bg-grid {
+  background-image: none;
+}
+
+/* Subtle dotted grid used on hero/section backgrounds */
+.bg-grid {
+  background-image: radial-gradient(var(--border) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Frosted-glass surface — translucent white panel with soft blur.
+   Use on cards / floating panels for the glassy look over the white theme. */
+.glass {
+  /* Two stacked fills: a bright diagonal light streak on top of a diagonal
+     sheen — together they read like a real glass pane catching light. The
+     backdrop-filter frosts the coloured ambient wash showing through. */
+  background:
+    linear-gradient(
+      104deg,
+      transparent 6%,
+      rgba(255, 255, 255, 0.5) 19%,
+      transparent 33%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.72) 0%,
+      rgba(255, 255, 255, 0.38) 45%,
+      rgba(255, 255, 255, 0.28) 62%,
+      rgba(255, 255, 255, 0.5) 100%
+    );
+  backdrop-filter: blur(22px) saturate(190%);
+  -webkit-backdrop-filter: blur(22px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.05),
+    0 12px 40px rgba(15, 23, 42, 0.12),
+    0 2px 10px rgba(15, 23, 42, 0.05),
+    inset 0 1px 1px rgba(255, 255, 255, 1),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.5);
+}
+
+.dark .glass {
+  background:
+    linear-gradient(
+      104deg,
+      transparent 6%,
+      rgba(255, 255, 255, 0.06) 19%,
+      transparent 33%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(30, 30, 38, 0.78) 0%,
+      rgba(14, 14, 18, 0.6) 55%,
+      rgba(10, 10, 12, 0.72) 100%
+    );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    0 14px 44px rgba(0, 0, 0, 0.55),
+    inset 0 1px 1px rgba(255, 255, 255, 0.06);
+}
+
+/* ------------------------------------------------------------
+   Shine sweep for gradient headline text.
+   A bright specular band travels across the brand→accent gradient.
+   The glint colour is theme-aware: pure white would vanish against the
+   white light-mode page, so light mode uses a bright indigo glint while
+   dark mode uses white for a crisp pop against black.
+   ------------------------------------------------------------ */
+.text-shine {
+  /* Base brand→accent gradient stays fully visible; a thin white streak
+     sweeps across it as a glint. The white band is narrow so the text is
+     never washed out — it just catches the light for a moment. */
+  --shine: rgba(15, 23, 42, 0.55);  /* light: subtle dark glint (white would vanish) */
+  background-image: linear-gradient(
+    100deg,
+    var(--brand) 0%,
+    var(--accent) 44%,
+    var(--shine) 50%,
+    var(--brand) 56%,
+    var(--accent) 100%
+  );
+  background-size: 250% 100%;
+  background-repeat: no-repeat;
+  background-position: 0% 0;      /* rest on the solid gradient before the sweep */
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* 0.8s delay so the text renders solid first, then the glint sweeps. */
+  animation: text-shine 5s cubic-bezier(0.45, 0, 0.55, 1) 0.8s infinite;
+}
+.dark .text-shine {
+  --shine: rgba(255, 255, 255, 0.95);  /* dark: white glint pops against black */
+}
+@keyframes text-shine {
+  0%,
+  15%  { background-position: 100% 0; }
+  70%,
+  100% { background-position: 0% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .text-shine {
+    animation: none;
+    background-position: 100% 0;  /* rest on the base gradient, no glint */
+  }
+}
+
+/* Gentle fade-up used sparingly for section reveals */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fade-up 0.6s ease both;
+}
+
+/* Side drawer (card hamburger nav) slide-in + backdrop fade */
+@keyframes drawer-in {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+.animate-drawer-in {
+  animation: drawer-in 0.25s ease-out both;
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease both;
+}
+
+/* Infinite horizontal marquee — used by the hero template showcase. The track
+   holds two copies of the tiles, so translating by -50% loops seamlessly. */
+@keyframes marquee-ltr {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes marquee-rtl {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+.animate-marquee {
+  animation: marquee-ltr 50s linear infinite;
+}
+.animate-marquee-reverse {
+  animation: marquee-rtl 50s linear infinite;
+}
+.marquee-row:hover .animate-marquee,
+.marquee-row:hover .animate-marquee-reverse {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-marquee-reverse { animation: none; }
+}
+
+/* Thin, unobtrusive scrollbar for horizontal template strips */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Slim scroll indicator — a small, subtle bar shown only while content overflows */
+.thin-scrollbar { scrollbar-width: thin; scrollbar-color: rgb(203 213 225) transparent; }
+.thin-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+.thin-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgb(203 213 225);
+  border-radius: 9999px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgb(148 163 184); }
+
+/* ============================================================
+   Per-card dark theme
+   ------------------------------------------------------------
+   Card creators can choose whether visitors see their public card in light or
+   dark. The card layouts use hard-coded light utilities (bg-white, text-slate-*)
+   for their neutral surfaces, so when a card opts into dark we remap just those
+   neutrals inside the `.card-dark` scope. Accent-coloured headers, gradients and
+   white-on-colour text are left untouched so the brand identity is preserved.
+   ============================================================ */
+.card-dark {
+  color-scheme: dark;
+}
+.card-dark :where(.bg-white, .bg-surface) {
+  background-color: #0b0b0f !important;
+}
+.card-dark :where(.bg-slate-50, .bg-slate-100, .bg-surface-2, .bg-surface-hover) {
+  background-color: #17171c !important;
+}
+.card-dark :where(.bg-slate-200) {
+  background-color: #21212a !important;
+}
+.card-dark :where(.text-slate-900, .text-slate-800, .text-slate-700, .text-foreground) {
+  color: #f1f5f9 !important;
+}
+.card-dark :where(.text-slate-600, .text-slate-500, .text-slate-400, .text-muted) {
+  color: #9aa4b2 !important;
+}
+.card-dark :where(
+  .border-slate-100, .border-slate-200, .border-slate-300, .border-border, .border
+) {
+  border-color: #26262e !important;
+}
+/* The card shell itself carries bg-white — recolour it directly. */
+.card-dark > :where(.bg-white),
+.card-dark.bg-white {
+  background-color: #0b0b0f !important;
 }

@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+# local file-based card store (Phase 1 persistence)
+/.data
+
 # next.js
 /.next/
 /out/

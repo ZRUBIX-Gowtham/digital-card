@@ -1,0 +1,77 @@
+# Deploy the static Next.js export to GitHub Pages.
+#
+# ⚠️ Requires a STATIC build: this app currently uses server actions, API
+# route handlers, cookie auth and `dynamic = "force-dynamic"`, none of which
+# are supported by `output: 'export'`. Those must be removed/stubbed before
+# `next build` will succeed on Pages. See the notes at the bottom of this file.
+#
+# Setup once in the repo: Settings → Pages → Build and deployment →
+# Source = "GitHub Actions".
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch: {}
+
+# Least-privilege token that can publish to Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deployment at a time; don't cancel an in-flight release.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure Pages
+        # `static_site_generator: next` auto-injects the correct basePath/
+        # assetPrefix for a project site (https://<user>.github.io/<repo>/),
+        # so links and _next assets resolve. Drop it if you use a custom
+        # domain or a <user>.github.io root repo.
+        uses: actions/configure-pages@v5
+        with:
+          static_site_generator: next
+
+      - name: Build static export
+        # `next build` writes the static site to ./out when
+        # `output: 'export'` is set in next.config.ts.
+        run: npm run build
+
+      - name: Disable Jekyll processing
+        # Ensures Pages serves Next's _next/ folder as-is.
+        run: touch out/.nojekyll
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
