@@ -1,6 +1,3 @@
-"use server";
-
-import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/auth";
 import { saveCardToStore, getCardFromStore } from "@/lib/cards-store";
 import { getTemplate } from "@/data/templates";
@@ -10,12 +7,6 @@ export interface ChangeTemplateResult {
   error?: string;
 }
 
-/**
- * Switch the signed-in user's card to a different template. Ownership is taken
- * from the session (never the client), and the new card adopts the template's
- * own accent so the design fully changes — matching what the gallery preview
- * shows. The view counter and slug stay server-owned.
- */
 export async function changeTemplateAction(
   templateId: string,
 ): Promise<ChangeTemplateResult> {
@@ -35,10 +26,6 @@ export async function changeTemplateAction(
     templateId,
     accent: template.style.accent,
   });
-
-  revalidatePath(`/${user.cardSlug}`);
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/edit");
 
   return { ok: true };
 }

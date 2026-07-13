@@ -1,5 +1,3 @@
-"use server";
-
 import { getCardFromStore } from "@/lib/cards-store";
 import { addLead, getBookedSlots, type LeadType } from "@/lib/leads-store";
 import { logEvent } from "@/lib/analytics-store";

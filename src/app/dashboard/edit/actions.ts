@@ -1,6 +1,3 @@
-"use server";
-
-import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/auth";
 import { saveCardToStore, getCardFromStore } from "@/lib/cards-store";
 import type { CardData } from "@/types/card";
@@ -29,11 +26,6 @@ export async function saveCardAction(draft: CardData): Promise<SaveResult> {
   };
 
   saveCardToStore(next);
-
-  // Refresh the public card and dashboard so changes appear immediately.
-  revalidatePath(`/${user.cardSlug}`);
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/edit");
 
   return { ok: true };
 }

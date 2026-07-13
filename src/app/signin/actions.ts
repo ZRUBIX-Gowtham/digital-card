@@ -1,6 +1,3 @@
-"use server";
-
-import { redirect } from "next/navigation";
 import { getUserByEmail } from "@/data/users";
 import { createSession, destroySession } from "@/lib/auth";
 
@@ -21,10 +18,15 @@ export async function signInAction(
   }
 
   await createSession(user.cardSlug);
-  redirect("/dashboard");
+  if (typeof window !== "undefined") {
+    window.location.href = "/dashboard";
+  }
+  return {};
 }
 
 export async function signOutAction(): Promise<void> {
   await destroySession();
-  redirect("/signin");
+  if (typeof window !== "undefined") {
+    window.location.href = "/signin";
+  }
 }
