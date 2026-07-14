@@ -15,7 +15,7 @@ import type { CardData } from "@/types/card";
  * Note: works with `next dev` and `next start` (Node runtime with a writable
  * filesystem). A serverless/read-only host would need the DB swap.
  */
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = process.env.VERCEL ? "/tmp/.data" : path.join(process.cwd(), ".data");
 const FILE = path.join(DATA_DIR, "cards.json");
 
 function readAll(): CardData[] {

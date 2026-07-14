@@ -8,7 +8,7 @@ import path from "node:path";
  * on first write. Mirrors the pattern in `cards-store.ts` so Phase 2 can swap
  * these functions for database queries without changing any caller.
  */
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = process.env.VERCEL ? "/tmp/.data" : path.join(process.cwd(), ".data");
 const FILE = path.join(DATA_DIR, "leads.json");
 
 export type LeadType = "enquiry" | "booking";

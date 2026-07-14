@@ -10,7 +10,7 @@ import path from "node:path";
  *
  * Mirrors `cards-store.ts`; Phase 2 swaps the file for a DB / analytics table.
  */
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = process.env.VERCEL ? "/tmp/.data" : path.join(process.cwd(), ".data");
 const FILE = path.join(DATA_DIR, "events.json");
 
 export type EventType =
