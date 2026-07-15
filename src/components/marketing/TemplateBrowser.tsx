@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, ChevronDown, LayoutGrid, Check } from "lucide-react";
+import { ArrowUpRight, ChevronDown, LayoutGrid, Check, CheckCircle2 } from "lucide-react";
 import type { CategoryId, TemplateMeta } from "@/types/card";
+import { chooseTemplateAction } from "@/app/(marketing)/templates/actions";
 
 export interface BrowserItem {
   template: TemplateMeta;
@@ -84,11 +85,14 @@ const categorySpotlights: Record<Filter, SpotlightInfo> = {
 export function TemplateBrowser({
   items,
   categories,
+  isLoggedIn = false,
 }: {
   items: BrowserItem[];
   categories: { id: CategoryId; name: string; tagline: string }[];
+  isLoggedIn?: boolean;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
+  const [loadingId, setLoadingId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -234,6 +238,22 @@ export function TemplateBrowser({
             key={t.id}
             className="group relative overflow-hidden rounded-2xl border border-border bg-surface transition-shadow hover:shadow-[0_12px_40px_rgba(15,23,42,0.1)]"
           >
+            <button
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!isLoggedIn) {
+                  window.location.href = "/signin";
+                  return;
+                }
+                setLoadingId(t.id);
+                await chooseTemplateAction(t.id);
+              }}
+              disabled={loadingId === t.id}
+              className="absolute right-3 top-3 z-20 rounded-full bg-brand/90 backdrop-blur-sm px-4 py-1.5 text-xs font-bold tracking-wide text-white transition-all hover:bg-brand hover:scale-105 disabled:opacity-70 disabled:hover:scale-100 cursor-pointer shadow-sm"
+            >
+              {loadingId === t.id ? "Saving..." : "Choose"}
+            </button>
+
             <div className="aspect-[4/3] overflow-hidden border-b border-border bg-surface-2">
               {fallback ?? (
                 <img

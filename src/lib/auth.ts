@@ -8,11 +8,38 @@ import { getUserBySlug, type DummyUser } from "@/data/users";
 const COOKIE = "zx_session";
 const MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
+import { db } from "./firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
+
 export async function getSession(): Promise<DummyUser | null> {
   const store = await cookies();
   const slug = store.get(COOKIE)?.value;
   if (!slug) return null;
-  return getUserBySlug(slug) ?? null;
+  
+  // First check mock data
+  const localUser = getUserBySlug(slug);
+  if (localUser) return localUser;
+
+  // If not found in mock data, check Firestore
+  try {
+    const q = query(collection(db, "users"), where("cardSlug", "==", slug));
+    const querySnapshot = await getDocs(q);
+    
+    if (!querySnapshot.empty) {
+      const userData = querySnapshot.docs[0].data();
+      return {
+        email: userData.email,
+        name: userData.name,
+        cardSlug: userData.cardSlug,
+        password: "", // No password for Google users
+        slugChanges: userData.slugChanges || 0,
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching session from Firestore:", error);
+  }
+
+  return null;
 }
 
 export async function createSession(cardSlug: string): Promise<void> {

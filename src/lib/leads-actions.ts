@@ -1,8 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
 import { getCardFromStore } from "@/lib/cards-store";
 import { addLead, getBookedSlots, type LeadType } from "@/lib/leads-store";
-import { logEvent } from "@/lib/analytics-store";
+import { logEvent, metaFromHeaders } from "@/lib/analytics-store";
 
 export interface SubmitLeadInput {
   cardSlug: string;
@@ -36,7 +37,7 @@ export async function submitLeadAction(
   const cardSlug = clip(input.cardSlug, 120);
   const type: LeadType = input.type === "booking" ? "booking" : "enquiry";
 
-  if (!cardSlug || !getCardFromStore(cardSlug)) {
+  if (!cardSlug || !(await getCardFromStore(cardSlug))) {
     return { ok: false, error: "This card is no longer available." };
   }
 
@@ -56,11 +57,14 @@ export async function submitLeadAction(
   }
 
   // Guard against two visitors grabbing the same slot on the same day.
-  if (type === "booking" && time && getBookedSlots(cardSlug, date).includes(time)) {
-    return { ok: false, error: "Sorry, that slot was just taken. Please pick another." };
+  if (type === "booking" && time) {
+    const booked = await getBookedSlots(cardSlug, date);
+    if (booked.includes(time)) {
+      return { ok: false, error: "Sorry, that slot was just taken. Please pick another." };
+    }
   }
 
-  addLead({
+  await addLead({
     cardSlug,
     type,
     name,
@@ -72,7 +76,7 @@ export async function submitLeadAction(
     time: type === "booking" ? time || undefined : undefined,
   });
 
-  logEvent(cardSlug, type);
+  await logEvent(cardSlug, type, undefined, metaFromHeaders(await headers()));
 
   return { ok: true };
 }
@@ -87,6 +91,6 @@ export async function getBookedSlotsAction(
 ): Promise<string[]> {
   const slug = clip(cardSlug, 120);
   const day = clip(date, 40);
-  if (!slug || !day || !getCardFromStore(slug)) return [];
-  return getBookedSlots(slug, day);
+  if (!slug || !day || !(await getCardFromStore(slug))) return [];
+  return await getBookedSlots(slug, day);
 }

@@ -19,7 +19,7 @@ export async function saveCardAction(draft: CardData): Promise<SaveResult> {
   const user = await getSession();
   if (!user) return { ok: false, error: "You must be signed in." };
 
-  const existing = getCardFromStore(user.cardSlug);
+  const existing = await getCardFromStore(user.cardSlug);
   if (!existing) return { ok: false, error: "No card is linked to your account." };
 
   const next: CardData = {
@@ -28,7 +28,7 @@ export async function saveCardAction(draft: CardData): Promise<SaveResult> {
     views: existing.views, // counter is server-owned; never trust the draft
   };
 
-  saveCardToStore(next);
+  await saveCardToStore(next);
 
   // Refresh the public card and dashboard so changes appear immediately.
   revalidatePath(`/${user.cardSlug}`);

@@ -1,5 +1,5 @@
 import { getCardFromStore } from "@/lib/cards-store";
-import { logEvent, ACTION_TYPES, type EventType } from "@/lib/analytics-store";
+import { logEvent, metaFromHeaders, ACTION_TYPES, type EventType } from "@/lib/analytics-store";
 
 // Runs on demand (a beacon per interaction); nothing to cache.
 export const dynamic = "force-dynamic";
@@ -24,9 +24,11 @@ export async function POST(request: Request): Promise<Response> {
       slug &&
       type &&
       ACTION_TYPES.includes(type) &&
-      getCardFromStore(slug)
+      await getCardFromStore(slug)
     ) {
-      logEvent(slug, type);
+      // The beacon is sent from the visitor's browser, so these headers carry
+      // their real device/browser and (on Vercel) geo-IP location.
+      await logEvent(slug, type, undefined, metaFromHeaders(request.headers));
     }
   } catch {
     /* malformed beacon — ignore */

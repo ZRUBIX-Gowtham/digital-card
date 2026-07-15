@@ -18,10 +18,10 @@ export default async function TemplatesPage() {
   const user = await getSession();
   if (!user) redirect("/signin");
 
-  const card = getCardFromStore(user.cardSlug);
+  const card = await getCardFromStore(user.cardSlug);
   if (!card) redirect("/dashboard");
 
-  const unreadLeads = countUnreadLeads(card.slug);
+  const unreadLeads = await countUnreadLeads(card.slug);
 
   // Build live, top-cropped thumbnails on the server — one per template.
   const pickerItems: PickerItem[] = templates.map((t) => {
@@ -33,7 +33,7 @@ export default async function TemplatesPage() {
       description: t.description,
       bestFor: t.bestFor,
       thumb: demo ? (
-        <div className="pointer-events-none h-full w-full overflow-hidden">
+        <div key={`thumb-${t.id}`} className="pointer-events-none h-full w-full overflow-hidden">
           <div className="w-full" style={{ zoom: 0.5 }}>
             <CardRenderer card={demo} templateId={t.id} />
           </div>

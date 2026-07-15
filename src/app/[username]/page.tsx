@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 import { getCardFromStore, incrementCardViews } from "@/lib/cards-store";
-import { logEvent } from "@/lib/analytics-store";
+import { logEvent, metaFromHeaders } from "@/lib/analytics-store";
 import { CardRenderer } from "@/components/card-templates/registry";
 import { siteConfig } from "@/lib/site";
 
@@ -33,7 +33,7 @@ export async function generateMetadata({
   params: Promise<{ username: string }>;
 }): Promise<Metadata> {
   const { username } = await params;
-  const card = getCardFromStore(username);
+  const card = await getCardFromStore(username);
   if (!card) return { title: "Card not found" };
   return {
     title: `${card.name} — ${card.title}`,
@@ -50,16 +50,18 @@ export default async function UsernameCardPage({
   const { username } = await params;
   if (RESERVED.has(username)) notFound();
 
-  const card = getCardFromStore(username);
+  const card = await getCardFromStore(username);
   if (!card) notFound();
 
   // Count this visit. Page is force-dynamic, so this runs on every load.
-  const views = incrementCardViews(username) ?? card.views ?? 0;
+  const views = (await incrementCardViews(username)) ?? card.views ?? 0;
 
   // Log the view for analytics, tagging the referrer host when the visitor
-  // arrived from another site (so the dashboard can show top referrers).
-  const referer = (await headers()).get("referer") ?? undefined;
-  logEvent(username, "view", referer);
+  // arrived from another site, plus their device/browser/OS and geo-IP location
+  // (derived from the request headers) so the dashboard can break visits down.
+  const h = await headers();
+  const referer = h.get("referer") ?? undefined;
+  await logEvent(username, "view", referer, metaFromHeaders(h));
 
   // The card creator decides what visitors see — light or dark — regardless of
   // the visitor's own system/theme preference. Use explicit colours (not the

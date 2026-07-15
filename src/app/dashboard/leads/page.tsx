@@ -17,11 +17,11 @@ export default async function LeadsPage() {
   const user = await getSession();
   if (!user) redirect("/signin");
 
-  const card = getCardFromStore(user.cardSlug);
+  const card = await getCardFromStore(user.cardSlug);
   if (!card) redirect("/dashboard");
 
-  const leads = getLeadsForCard(card.slug);
-  const unread = countUnreadLeads(card.slug);
+  const leads = await getLeadsForCard(card.slug);
+  const unread = await countUnreadLeads(card.slug);
 
   return (
     <DashboardShell

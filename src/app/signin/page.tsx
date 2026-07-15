@@ -45,18 +45,12 @@ export default async function SignInPage({
             <SignInForm />
           </div>
 
-          <div className="mt-6 rounded-xl border border-dashed border-border bg-surface px-4 py-3 text-xs text-muted">
-            <p className="font-semibold text-foreground">Demo login</p>
-            <p className="mt-1">
-              Email <span className="font-mono">demo@digitalsite.com</span> · Password{" "}
-              <span className="font-mono">demo1234</span>
-            </p>
-          </div>
+
         </div>
 
         <p className="mt-6 text-center text-sm text-muted">
           Don&apos;t have a card yet?{" "}
-          <Link href="/templates" className="font-semibold text-brand">
+          <Link href="/templates" className="font-semibold text-brand cursor-pointer">
             Create one
           </Link>
         </p>

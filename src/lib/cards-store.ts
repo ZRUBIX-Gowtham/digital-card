@@ -1,65 +1,59 @@
 import "server-only";
-import fs from "node:fs";
-import path from "node:path";
-import { cards as seedCards } from "@/data/cards";
+import { db } from "@/lib/firebase";
+import { collection, doc, getDoc, setDoc, getDocs, updateDoc, increment } from "firebase/firestore";
 import type { CardData } from "@/types/card";
 
-/**
- * Phase-1 file-based persistence for cards. Reads/writes `.data/cards.json`,
- * seeded from `src/data/cards.ts` on first use. This makes editor changes real
- * (the public `/{slug}` page reflects saves) while running locally with no DB.
- *
- * Phase 2 replaces these four functions with database queries — callers and the
- * `CardData` contract stay the same.
- *
- * Note: works with `next dev` and `next start` (Node runtime with a writable
- * filesystem). A serverless/read-only host would need the DB swap.
- */
-const DATA_DIR = process.env.VERCEL ? "/tmp/.data" : path.join(process.cwd(), ".data");
-const FILE = path.join(DATA_DIR, "cards.json");
-
-function readAll(): CardData[] {
+export async function getCardFromStore(slug: string): Promise<CardData | undefined> {
+  if (!slug) return undefined;
   try {
-    const raw = fs.readFileSync(FILE, "utf8");
-    const parsed = JSON.parse(raw) as CardData[];
-    if (Array.isArray(parsed) && parsed.length) return parsed;
-  } catch {
-    /* not seeded yet */
+    const docRef = doc(db, "cards", slug);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      return snap.data() as CardData;
+    }
+  } catch (error) {
+    console.error("Error getting card from Firestore:", error);
   }
-  return seedCards;
+  return undefined;
 }
 
-function writeAll(cards: CardData[]): void {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(FILE, JSON.stringify(cards, null, 2), "utf8");
+export async function getAllCardSlugsFromStore(): Promise<string[]> {
+  try {
+    const snap = await getDocs(collection(db, "cards"));
+    return snap.docs.map(d => d.id);
+  } catch (error) {
+    console.error("Error getting all slugs from Firestore:", error);
+    return [];
+  }
 }
 
-export function getCardFromStore(slug: string): CardData | undefined {
-  return readAll().find((c) => c.slug === slug);
+export async function saveCardToStore(card: CardData): Promise<void> {
+  if (!card.slug) return;
+  try {
+    // Firestore SDK throws an error if we pass `undefined` values.
+    // JSON.parse(JSON.stringify()) cleanly removes all undefined properties.
+    const cleanData = JSON.parse(JSON.stringify(card));
+    const docRef = doc(db, "cards", card.slug);
+    await setDoc(docRef, cleanData, { merge: true });
+  } catch (error) {
+    console.error("Error saving card to Firestore:", error);
+  }
 }
 
-export function getAllCardSlugsFromStore(): string[] {
-  return readAll().map((c) => c.slug);
-}
+export async function incrementCardViews(slug: string): Promise<number | undefined> {
+  if (!slug) return undefined;
+  try {
+    const docRef = doc(db, "cards", slug);
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) return undefined;
 
-export function saveCardToStore(card: CardData): void {
-  const all = readAll();
-  const idx = all.findIndex((c) => c.slug === card.slug);
-  if (idx >= 0) all[idx] = card;
-  else all.push(card);
-  writeAll(all);
-}
-
-/**
- * Increment and persist the public view count for a card, returning the new
- * total. No-op (returns undefined) if the slug is unknown.
- */
-export function incrementCardViews(slug: string): number | undefined {
-  const all = readAll();
-  const idx = all.findIndex((c) => c.slug === slug);
-  if (idx < 0) return undefined;
-  const next = (all[idx].views ?? 0) + 1;
-  all[idx] = { ...all[idx], views: next };
-  writeAll(all);
-  return next;
+    await updateDoc(docRef, {
+      views: increment(1)
+    });
+    
+    return (snap.data().views || 0) + 1;
+  } catch (error) {
+    console.error("Error incrementing views:", error);
+    return undefined;
+  }
 }

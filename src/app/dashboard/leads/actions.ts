@@ -12,7 +12,7 @@ import {
 export async function markLeadReadAction(id: string): Promise<{ ok: boolean }> {
   const user = await getSession();
   if (!user) return { ok: false };
-  markLeadRead(user.cardSlug, id);
+  await markLeadRead(user.cardSlug, id);
   revalidatePath("/dashboard/leads");
   revalidatePath("/dashboard");
   return { ok: true };
@@ -25,7 +25,7 @@ export async function markLeadReadAction(id: string): Promise<{ ok: boolean }> {
 export async function markAllLeadsReadAction(): Promise<void> {
   const user = await getSession();
   if (!user) return;
-  markAllLeadsRead(user.cardSlug);
+  await markAllLeadsRead(user.cardSlug);
   revalidatePath("/dashboard/leads");
   revalidatePath("/dashboard");
 }
@@ -34,7 +34,7 @@ export async function markAllLeadsReadAction(): Promise<void> {
 export async function deleteLeadAction(id: string): Promise<{ ok: boolean }> {
   const user = await getSession();
   if (!user) return { ok: false };
-  deleteLead(user.cardSlug, id);
+  await deleteLead(user.cardSlug, id);
   revalidatePath("/dashboard/leads");
   revalidatePath("/dashboard");
   return { ok: true };

@@ -30,9 +30,9 @@ export default async function DashboardPage() {
   const user = await getSession();
   if (!user) redirect("/signin");
 
-  const card = getCardFromStore(user.cardSlug);
+  const card = await getCardFromStore(user.cardSlug);
   const template = card ? getTemplate(card.templateId) : undefined;
-  const unreadLeads = card ? countUnreadLeads(card.slug) : 0;
+  const unreadLeads = card ? await countUnreadLeads(card.slug) : 0;
 
   return (
     <DashboardShell
@@ -143,7 +143,7 @@ export default async function DashboardPage() {
                   </div>
 
                   <div className="mt-6 border-t border-border pt-6">
-                    <ShareLink slug={card.slug} />
+                    <ShareLink slug={card.slug} slugChanges={user.slugChanges || 0} />
                   </div>
                 </section>
               </div>

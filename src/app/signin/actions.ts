@@ -24,6 +24,11 @@ export async function signInAction(
   redirect("/dashboard");
 }
 
+export async function googleSignInAction(email: string, name: string, slug: string): Promise<SignInState> {
+  await createSession(slug);
+  return { error: undefined };
+}
+
 export async function signOutAction(): Promise<void> {
   await destroySession();
   redirect("/signin");

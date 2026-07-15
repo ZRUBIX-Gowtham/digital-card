@@ -11,14 +11,18 @@ import {
   CalendarCheck,
   Send,
   Globe,
+  Monitor,
+  Smartphone,
+  Laptop,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { getCardFromStore } from "@/lib/cards-store";
 import { countUnreadLeads } from "@/lib/leads-store";
-import { analyticsForCard, type EventType } from "@/lib/analytics-store";
+import { analyticsForCard, type EventType, type Breakdown } from "@/lib/analytics-store";
 import { getTemplate } from "@/data/templates";
 import { Container } from "@/components/ui/Container";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { VisitorMap } from "@/components/dashboard/VisitorMap";
 
 export const dynamic = "force-dynamic";
 
@@ -39,14 +43,14 @@ export default async function AnalyticsPage() {
   const user = await getSession();
   if (!user) redirect("/signin");
 
-  const card = getCardFromStore(user.cardSlug);
+  const card = await getCardFromStore(user.cardSlug);
   if (!card) redirect("/dashboard");
 
   const accent = getTemplate(card.templateId)?.style.accent ?? card.accent ?? "#4f46e5";
-  const data = analyticsForCard(card.slug, 14);
+  const data = await analyticsForCard(card.slug, 14);
   const maxDaily = Math.max(1, ...data.daily.map((d) => d.views));
   const last7 = data.daily.slice(-7).reduce((n, d) => n + d.views, 0);
-  const unreadLeads = countUnreadLeads(card.slug);
+  const unreadLeads = await countUnreadLeads(card.slug);
 
   return (
     <DashboardShell
@@ -65,7 +69,7 @@ export default async function AnalyticsPage() {
 
         {/* Top stats */}
         <section className="grid gap-4 sm:grid-cols-3">
-          <Stat icon={<Eye className="h-5 w-5" />} label="Total views" value={data.totalViews.toLocaleString()} accent={accent} />
+          <Stat icon={<Eye className="h-5 w-5" />} label="Total views" value={Math.max(card.views ?? 0, data.totalViews).toLocaleString()} accent={accent} />
           <Stat icon={<MousePointerClick className="h-5 w-5" />} label="Total interactions" value={data.totalActions.toLocaleString()} accent={accent} />
           <Stat icon={<Globe className="h-5 w-5" />} label="Views · last 7 days" value={last7.toLocaleString()} accent={accent} />
         </section>
@@ -147,8 +151,151 @@ export default async function AnalyticsPage() {
             </div>
           )}
         </section>
+
+        {/* Audience: device / browser / OS breakdowns */}
+        <section className="mt-6 grid gap-6 lg:grid-cols-3">
+          <BreakdownCard
+            title="Devices"
+            icon={<Smartphone className="h-4 w-4" />}
+            items={data.devices}
+            accent={accent}
+            empty="No device data yet."
+          />
+          <BreakdownCard
+            title="Browsers"
+            icon={<Laptop className="h-4 w-4" />}
+            items={data.browsers}
+            accent={accent}
+            empty="No browser data yet."
+          />
+          <BreakdownCard
+            title="Operating systems"
+            icon={<Monitor className="h-4 w-4" />}
+            items={data.operatingSystems}
+            accent={accent}
+            empty="No OS data yet."
+          />
+        </section>
+
+        {/* Location: map report + top locations list */}
+        <section className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-start">
+          <div className="rounded-2xl border border-border bg-surface p-6">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
+                <MapPin className="h-4 w-4 text-muted" /> Visitor map
+              </h2>
+              {data.points.length > 0 && (
+                <span className="text-xs text-muted">
+                  {data.points.length.toLocaleString()} located visit
+                  {data.points.length === 1 ? "" : "s"}
+                </span>
+              )}
+            </div>
+            {data.points.length === 0 ? (
+              <EmptyNote text="No location data yet. Each visitor appears here as a dot once your card is live — locations come from the visitor's network, so local previews don't count." />
+            ) : (
+              <div className="mt-4">
+                <VisitorMap points={data.points} accent={accent} />
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-border bg-surface p-6">
+            <h2 className="text-sm font-bold text-foreground">Top locations</h2>
+            {data.locations.length === 0 ? (
+              <EmptyNote text="No location data yet." />
+            ) : (
+              <BreakdownBars items={data.locations} accent={accent} />
+            )}
+          </div>
+        </section>
+
+        {/* Recent visitors — one row per visit with their device / OS / place */}
+        <section className="mt-6 rounded-2xl border border-border bg-surface p-6">
+          <h2 className="text-sm font-bold text-foreground">Recent visitors</h2>
+          {data.visits.length === 0 ? (
+            <EmptyNote text="No visits recorded yet. Once people open your card, each visit shows here with its device, OS and location." />
+          ) : (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[520px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
+                    <th className="pb-2 pr-4 font-semibold">When</th>
+                    <th className="pb-2 pr-4 font-semibold">Location</th>
+                    <th className="pb-2 pr-4 font-semibold">Device</th>
+                    <th className="pb-2 pr-4 font-semibold">OS</th>
+                    <th className="pb-2 font-semibold">Browser</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.visits.map((v, i) => (
+                    <tr key={i} className="border-b border-border/60 last:border-0">
+                      <td className="py-2.5 pr-4 whitespace-nowrap text-muted">{formatWhen(v.at)}</td>
+                      <td className="py-2.5 pr-4 text-foreground">{v.location ?? "—"}</td>
+                      <td className="py-2.5 pr-4 text-foreground">{v.device ?? "—"}</td>
+                      <td className="py-2.5 pr-4 text-foreground">{v.os ?? "—"}</td>
+                      <td className="py-2.5 text-foreground">{v.browser ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       </Container>
     </DashboardShell>
+  );
+}
+
+function BreakdownCard({
+  title,
+  icon,
+  items,
+  accent,
+  empty,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  items: Breakdown[];
+  accent: string;
+  empty: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-6">
+      <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
+        <span className="text-muted">{icon}</span>
+        {title}
+      </h2>
+      {items.length === 0 ? <EmptyNote text={empty} /> : <BreakdownBars items={items} accent={accent} />}
+    </div>
+  );
+}
+
+function BreakdownBars({ items, accent }: { items: Breakdown[]; accent: string }) {
+  const total = items.reduce((n, i) => n + i.count, 0) || 1;
+  return (
+    <ul className="mt-4 space-y-3">
+      {items.map((item) => {
+        const pct = Math.round((item.count / total) * 100);
+        return (
+          <li key={item.name}>
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="min-w-0 truncate text-foreground">{item.name}</span>
+              <span className="shrink-0 font-semibold text-muted">
+                {item.count.toLocaleString()}
+                <span className="ml-1 text-xs font-normal">({pct}%)</span>
+              </span>
+            </div>
+            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-surface-2/60">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${Math.max(4, pct)}%`, backgroundColor: accent }}
+              />
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -179,4 +326,15 @@ function Stat({
 
 function EmptyNote({ text }: { text: string }) {
   return <p className="mt-4 text-sm leading-relaxed text-muted">{text}</p>;
+}
+
+function formatWhen(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString(undefined, {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }

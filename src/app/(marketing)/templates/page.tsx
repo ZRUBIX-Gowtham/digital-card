@@ -14,7 +14,12 @@ export const metadata: Metadata = {
   alternates: { canonical: "/templates" },
 };
 
-export default function TemplatesPage() {
+import { getSession } from "@/lib/auth";
+
+export default async function TemplatesPage() {
+  const user = await getSession();
+  const isLoggedIn = !!user;
+
   // Every template showcases its live, original design (top-cropped) instead of
   // a pre-rendered PNG, so the gallery always reflects the real card — the same
   // treatment the Album (gallery) and Reel (video) templates already used.
@@ -42,7 +47,7 @@ export default function TemplatesPage() {
         backgroundImage="/images/templates-hero-bg.png"
       />
       <Section>
-        <TemplateBrowser items={items} categories={categories} />
+        <TemplateBrowser items={items} categories={categories} isLoggedIn={isLoggedIn} />
       </Section>
       <CTA />
     </>

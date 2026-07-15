@@ -325,6 +325,17 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
     }
   }, []);
 
+  // Sync state if server prop changes (e.g. from server actions / revalidation)
+  useEffect(() => {
+    setCard(prev => {
+      // If template or accent changed from the outside, sync the entire card to reflect server state
+      if (prev.templateId !== initialCard.templateId || prev.accent !== initialCard.accent) {
+        return initialCard;
+      }
+      return prev;
+    });
+  }, [initialCard]);
+
   // Auto-dismiss the save toast after a few seconds.
   useEffect(() => {
     if (!status) return;

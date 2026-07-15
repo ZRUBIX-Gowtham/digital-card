@@ -54,7 +54,7 @@ export function DashboardShell({
     { href: "/dashboard/edit?tab=content", match: "/dashboard/edit", label: "Edit card", short: "Edit", icon: Pencil },
     { href: "/dashboard/analytics", label: "Analytics", short: "Stats", icon: BarChart3 },
     { href: "/dashboard/leads", label: "Leads", short: "Leads", icon: Inbox, badge: unreadLeads },
-    { href: "/dashboard/templates", label: "Change template", short: "Design", icon: LayoutTemplate },
+    { href: "/dashboard/templates", label: "Change Template", short: "Design", icon: LayoutTemplate },
   ];
 
   const isActive = (item: NavItem) => {
@@ -82,19 +82,17 @@ export function DashboardShell({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
-                  active
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${active
                     ? "bg-brand text-white"
                     : "text-foreground hover:bg-surface-hover"
-                }`}
+                  }`}
               >
                 <Icon className="h-[18px] w-[18px] shrink-0" />
                 <span className="flex-1">{item.label}</span>
                 {item.badge ? (
                   <span
-                    className={`inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
-                      active ? "bg-white/25 text-white" : "bg-brand text-white"
-                    }`}
+                    className={`inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${active ? "bg-white/25 text-white" : "bg-brand text-white"
+                      }`}
                   >
                     {item.badge}
                   </span>
@@ -170,9 +168,8 @@ export function DashboardShell({
 
         {/* Mobile bottom tab bar */}
         <nav
-          className={`fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur lg:hidden ${
-            hideMobileTabBar ? "hidden" : ""
-          }`}
+          className={`fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur lg:hidden ${hideMobileTabBar ? "hidden" : ""
+            }`}
         >
           <div className="mx-auto flex max-w-md items-stretch justify-around px-1 pb-[env(safe-area-inset-bottom)]">
             {nav.map((item) => {
@@ -183,15 +180,13 @@ export function DashboardShell({
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-semibold transition-colors ${
-                    active ? "text-brand" : "text-muted"
-                  }`}
+                  className={`flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-semibold transition-colors ${active ? "text-brand" : "text-muted"
+                    }`}
                 >
                   <span className="relative flex h-8 w-full items-center justify-center">
                     <span
-                      className={`flex h-8 w-14 items-center justify-center rounded-full transition-colors ${
-                        active ? "bg-brand/10" : ""
-                      }`}
+                      className={`flex h-8 w-14 items-center justify-center rounded-full transition-colors ${active ? "bg-brand/10" : ""
+                        }`}
                     >
                       <Icon className="h-[18px] w-[18px]" />
                     </span>

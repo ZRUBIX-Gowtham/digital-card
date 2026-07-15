@@ -8,6 +8,7 @@ export interface DummyUser {
   password: string;
   name: string;
   cardSlug: string;
+  slugChanges?: number;
 }
 
 export const users: DummyUser[] = [

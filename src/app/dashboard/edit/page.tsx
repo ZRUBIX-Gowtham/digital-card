@@ -16,7 +16,7 @@ export default async function EditPage() {
   const user = await getSession();
   if (!user) redirect("/signin");
 
-  const card = getCardFromStore(user.cardSlug);
+  const card = await getCardFromStore(user.cardSlug);
   if (!card) redirect("/dashboard");
 
   return (
@@ -24,9 +24,9 @@ export default async function EditPage() {
       userName={user.name}
       userEmail={user.email}
       cardSlug={card.slug}
-      unreadLeads={countUnreadLeads(card.slug)}
+      unreadLeads={await countUnreadLeads(card.slug)}
     >
-      <CardEditor initialCard={card} />
+      <CardEditor key={card.templateId} initialCard={card} />
     </DashboardShell>
   );
 }
