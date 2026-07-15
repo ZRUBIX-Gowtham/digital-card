@@ -12,6 +12,7 @@ import { Carousel } from "./Carousel";
 import { VideoCard } from "./VideoCard";
 import { PhotoGallery } from "./PhotoGallery";
 import { EnquirySection, BookingSection } from "./LeadForms";
+import { UpiPay } from "./UpiPay";
 
 export function LucideIcon({ name, className, style }: { name: string; className?: string; style?: React.CSSProperties }) {
   const IconComponent = (Icons as any)[name] || Briefcase;
@@ -333,7 +334,7 @@ export function GalleryBody({
   return <PhotoGallery images={images} columns={columns} variant={variant} />;
 }
 
-export function PaymentSection({ card }: { card: CardData }) {
+export function PaymentSection({ card, accent }: { card: CardData; accent: string }) {
   const p = card.payment;
   if (!p || (!p.upiId && !p.accountNumber)) return null;
   return (
@@ -345,6 +346,14 @@ export function PaymentSection({ card }: { card: CardData }) {
         {p.accountName && <Row label="Account Name" value={p.accountName} />}
         {p.accountNumber && <Row label="A/C No." value={p.accountNumber} />}
         {p.ifsc && <Row label="IFSC" value={p.ifsc} />}
+        {p.upiId && p.showPayButton !== false && (
+          <UpiPay
+            upiId={p.upiId}
+            payeeName={p.accountName || card.name}
+            accent={accent}
+            fixedAmount={p.amount}
+          />
+        )}
       </div>
     </div>
   );
@@ -1955,7 +1964,7 @@ export function OrderedSections({
       case "gallery":
         return <GallerySection card={card} accent={accent} columns={galleryColumns} />;
       case "payment":
-        return <PaymentSection card={card} />;
+        return <PaymentSection card={card} accent={accent} />;
       case "businessHours":
         return <BusinessHoursSection card={card} accent={accent} />;
       case "youtubeVideos":

@@ -14,15 +14,26 @@ import {
   Monitor,
   Smartphone,
   Laptop,
+  Download,
+  IndianRupee,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { getCardFromStore } from "@/lib/cards-store";
 import { countUnreadLeads } from "@/lib/leads-store";
-import { analyticsForCard, type EventType, type Breakdown } from "@/lib/analytics-store";
+import {
+  analyticsForCard,
+  toRangeKey,
+  RANGE_DAYS,
+  RANGE_LABELS,
+  type EventType,
+  type Breakdown,
+} from "@/lib/analytics-store";
 import { getTemplate } from "@/data/templates";
 import { Container } from "@/components/ui/Container";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { VisitorMap } from "@/components/dashboard/VisitorMap";
+import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
+import { RangeFilter } from "@/components/dashboard/RangeFilter";
 
 export const dynamic = "force-dynamic";
 
@@ -35,21 +46,26 @@ const ACTION_META: Record<EventType, { label: string; icon: typeof Phone }> = {
   email: { label: "Emails", icon: Mail },
   map: { label: "Directions", icon: MapPin },
   "save-contact": { label: "Contact saved", icon: UserPlus },
+  pay: { label: "UPI payments", icon: IndianRupee },
   enquiry: { label: "Enquiries", icon: Send },
   booking: { label: "Bookings", icon: CalendarCheck },
 };
 
-export default async function AnalyticsPage() {
+export default async function AnalyticsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string }>;
+}) {
   const user = await getSession();
   if (!user) redirect("/signin");
 
   const card = await getCardFromStore(user.cardSlug);
   if (!card) redirect("/dashboard");
 
+  const range = toRangeKey((await searchParams).range);
   const accent = getTemplate(card.templateId)?.style.accent ?? card.accent ?? "#4f46e5";
-  const data = await analyticsForCard(card.slug, 14);
+  const data = await analyticsForCard(card.slug, RANGE_DAYS[range]);
   const maxDaily = Math.max(1, ...data.daily.map((d) => d.views));
-  const last7 = data.daily.slice(-7).reduce((n, d) => n + d.views, 0);
   const unreadLeads = await countUnreadLeads(card.slug);
 
   return (
@@ -60,24 +76,32 @@ export default async function AnalyticsPage() {
       unreadLeads={unreadLeads}
     >
       <Container className="py-8 lg:py-10">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
-          <p className="mt-1 text-sm text-muted">
-            How visitors are engaging with your card.
-          </p>
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
+            <p className="mt-1 text-sm text-muted">
+              How visitors are engaging with your card.
+            </p>
+          </div>
+          <LiveRefresh cardSlug={card.slug} />
+        </div>
+
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <RangeFilter active={range} />
+          <span className="text-xs text-muted">Showing {RANGE_LABELS[range]}</span>
         </div>
 
         {/* Top stats */}
         <section className="grid gap-4 sm:grid-cols-3">
-          <Stat icon={<Eye className="h-5 w-5" />} label="Total views" value={Math.max(card.views ?? 0, data.totalViews).toLocaleString()} accent={accent} />
-          <Stat icon={<MousePointerClick className="h-5 w-5" />} label="Total interactions" value={data.totalActions.toLocaleString()} accent={accent} />
-          <Stat icon={<Globe className="h-5 w-5" />} label="Views · last 7 days" value={last7.toLocaleString()} accent={accent} />
+          <Stat icon={<Eye className="h-5 w-5" />} label="Total views" value={data.totalViews.toLocaleString()} accent={accent} hint="Every open, incl. repeats" />
+          <Stat icon={<UserPlus className="h-5 w-5" />} label="Unique visits" value={data.uniqueVisits.toLocaleString()} accent={accent} hint="Repeat loads merged" />
+          <Stat icon={<MousePointerClick className="h-5 w-5" />} label="Interactions" value={data.totalActions.toLocaleString()} accent={accent} hint="Taps on call, WhatsApp, etc." />
         </section>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-start">
           {/* Daily views bar chart */}
           <section className="rounded-2xl border border-border bg-surface p-6">
-            <h2 className="text-sm font-bold text-foreground">Views · last 14 days</h2>
+            <h2 className="text-sm font-bold text-foreground">Views · {RANGE_LABELS[range]}</h2>
             {data.totalViews === 0 ? (
               <EmptyNote text="No views yet. Share your card link to start seeing traffic here." />
             ) : (
@@ -205,20 +229,37 @@ export default async function AnalyticsPage() {
             {data.locations.length === 0 ? (
               <EmptyNote text="No location data yet." />
             ) : (
-              <BreakdownBars items={data.locations} accent={accent} />
+              <>
+                <BreakdownBars items={data.locations} accent={accent} />
+                <p className="mt-4 text-xs leading-relaxed text-muted">
+                  Approximate — based on the visitor&apos;s network (IP), not GPS.
+                  Mobile visitors often show as their carrier&apos;s regional hub
+                  (e.g. a Salem visitor may appear as Chennai).
+                </p>
+              </>
             )}
           </div>
         </section>
 
         {/* Recent visitors — one row per visit with their device / OS / place */}
         <section className="mt-6 rounded-2xl border border-border bg-surface p-6">
-          <h2 className="text-sm font-bold text-foreground">Recent visitors</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-bold text-foreground">Recent visitors</h2>
+            {data.visits.length > 0 && (
+              <a
+                href={`/api/analytics/export?range=${range}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:text-foreground"
+              >
+                <Download className="h-3.5 w-3.5" /> Export CSV
+              </a>
+            )}
+          </div>
           {data.visits.length === 0 ? (
             <EmptyNote text="No visits recorded yet. Once people open your card, each visit shows here with its device, OS and location." />
           ) : (
-            <div className="mt-4 overflow-x-auto">
+            <div className="mt-4 max-h-[420px] overflow-auto">
               <table className="w-full min-w-[520px] text-left text-sm">
-                <thead>
+                <thead className="sticky top-0 z-10 bg-surface">
                   <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
                     <th className="pb-2 pr-4 font-semibold">When</th>
                     <th className="pb-2 pr-4 font-semibold">Location</th>
@@ -304,11 +345,13 @@ function Stat({
   label,
   value,
   accent,
+  hint,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   accent: string;
+  hint?: string;
 }) {
   return (
     <div className="rounded-2xl border border-border bg-surface p-5">
@@ -320,6 +363,7 @@ function Stat({
       </span>
       <p className="mt-4 text-2xl font-bold text-foreground">{value}</p>
       <p className="text-sm font-medium text-foreground">{label}</p>
+      {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
     </div>
   );
 }

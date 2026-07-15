@@ -129,6 +129,11 @@ export interface PaymentInfo {
   accountName?: string;
   accountNumber?: string;
   ifsc?: string;
+  /** Whether the "Pay via UPI" button is shown to visitors. Defaults to on. */
+  showPayButton?: boolean;
+  /** Fixed amount (₹) to pre-fill the UPI payment with. Empty = visitor enters
+   *  the amount themselves in their UPI app. */
+  amount?: string;
 }
 
 /** Lead-capture "Enquiry" form shown on the public card. */
@@ -236,7 +241,21 @@ export interface CardData {
    * content sheet scrolls up over it. Defaults to on.
    */
   stickyHero?: boolean;
+  /**
+   * Loading splash shown once when a visitor first opens the public card, then
+   * it animates away to reveal the page. "none" disables it. Defaults to "card".
+   */
+  introStyle?: IntroStyle;
 }
+
+/** Loading-splash designs offered for the public card's first-open animation. */
+export type IntroStyle =
+  | "none"
+  | "card"
+  | "spotlight"
+  | "curtain"
+  | "minimal"
+  | "ripple";
 
 /** Categories used to organise the template gallery. */
 export type CategoryId =

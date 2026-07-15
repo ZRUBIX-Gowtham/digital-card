@@ -13,6 +13,7 @@ import {
 import { getSession } from "@/lib/auth";
 import { getCardFromStore } from "@/lib/cards-store";
 import { countUnreadLeads } from "@/lib/leads-store";
+import { analyticsForCard } from "@/lib/analytics-store";
 import { getTemplate } from "@/data/templates";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,9 @@ export default async function DashboardPage() {
   const card = await getCardFromStore(user.cardSlug);
   const template = card ? getTemplate(card.templateId) : undefined;
   const unreadLeads = card ? await countUnreadLeads(card.slug) : 0;
+  // Same source as the Analytics page so the two never disagree: all-time views
+  // from the event log, not the raw `card.views` counter (which can drift).
+  const totalViews = card ? (await analyticsForCard(card.slug)).totalViews : 0;
 
   return (
     <DashboardShell
@@ -90,8 +94,8 @@ export default async function DashboardPage() {
                   <StatCard
                     icon={<Eye className="h-5 w-5" />}
                     label="Profile views"
-                    value={(card.views ?? 0).toLocaleString()}
-                    hint="Updates in real time"
+                    value={totalViews.toLocaleString()}
+                    hint="All-time · updates in real time"
                     live
                   />
                   <StatCard

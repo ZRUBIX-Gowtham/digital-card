@@ -78,6 +78,7 @@ import { FooterBody } from "@/components/card/CardFooter";
 import { HeaderBody } from "@/components/card/CardHeader";
 import { NavPreviewBody } from "@/components/card/CardNav";
 import { CardRenderer } from "@/components/card-templates/registry";
+import { IntroPreview } from "@/components/dashboard/IntroPreview";
 import { PhoneFrame } from "@/components/card/PhoneFrame";
 import { Container } from "@/components/ui/Container";
 import { saveCardAction } from "@/app/dashboard/edit/actions";
@@ -112,6 +113,20 @@ const FONT_SIZES: { id: NonNullable<CardData["fontScale"]>; label: string }[] = 
   { id: "sm", label: "Small" },
   { id: "md", label: "Medium" },
   { id: "lg", label: "Large" },
+];
+
+/** Loading-splash designs shown when a visitor first opens the public card. */
+const INTRO_STYLES: {
+  id: NonNullable<CardData["introStyle"]>;
+  label: string;
+  desc: string;
+}[] = [
+  { id: "card", label: "Business card", desc: "Card flips in, then reveals" },
+  { id: "spotlight", label: "Spotlight", desc: "Pulsing rings around your logo" },
+  { id: "curtain", label: "Curtain", desc: "Accent panel lifts away" },
+  { id: "minimal", label: "Minimal", desc: "Clean logo + progress bar" },
+  { id: "ripple", label: "Ripple", desc: "Accent floods the screen" },
+  { id: "none", label: "None", desc: "Go straight to the page" },
 ];
 
 const ALL_SECTIONS = [
@@ -302,6 +317,10 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
   const closeLayoutPicker = useCallback(() => setLayoutPickerFor(null), []);
   // Left "Add section" drawer (section + layout catalog) open state.
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Loading-animation design currently open in the full-preview popup.
+  const [introPreview, setIntroPreview] = useState<
+    NonNullable<CardData["introStyle"]> | null
+  >(null);
 
   // Accordion: ids of the currently-expanded panels (oldest first, capped at
   // MAX_OPEN_PANELS). Opening one past the cap collapses the oldest.
@@ -361,7 +380,7 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
     setCard((c) => ({ ...c, contact: { ...c.contact, [key]: value } }));
     setStatus(null);
   }
-  function setPayment(key: string, value: string) {
+  function setPayment(key: string, value: string | boolean) {
     setCard((c) => ({ ...c, payment: { ...(c.payment ?? {}), [key]: value } }));
     setStatus(null);
   }
@@ -710,6 +729,67 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
                     </div>
                   </Panel>
 
+                  {/* Loading intro — the splash visitors see on first open */}
+                  <Panel
+                    title="Loading animation"
+                    desc="Plays each time a visitor opens or refreshes your card, then it reveals the page. On desktop it appears inside the phone-width card column. Open your live card in a new tab to preview."
+                  >
+                    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                      {INTRO_STYLES.map((s) => {
+                        const active = (card.introStyle ?? "card") === s.id;
+                        return (
+                          <div
+                            key={s.id}
+                            className={`relative flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-colors ${
+                              active
+                                ? "border-brand bg-brand/5 ring-1 ring-brand"
+                                : "border-border hover:bg-surface-hover/50"
+                            }`}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => set("introStyle", s.id)}
+                              className="absolute inset-0 cursor-pointer rounded-xl"
+                              aria-label={`Use ${s.label}`}
+                            />
+                            {s.id !== "none" && (
+                              <button
+                                type="button"
+                                onClick={() => setIntroPreview(s.id)}
+                                className="absolute right-2 top-2 z-10 rounded-lg border border-border bg-surface p-1.5 text-muted shadow-sm transition-colors hover:text-brand cursor-pointer"
+                                aria-label={`Preview ${s.label}`}
+                                title="Preview"
+                              >
+                                <Icons.Maximize2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                            <span className="flex items-center gap-1.5 pr-7 text-sm font-semibold text-foreground">
+                              {active && <Check className="h-3.5 w-3.5 shrink-0 text-brand" />}
+                              {s.label}
+                            </span>
+                            <span className="text-[11px] leading-tight text-muted">
+                              {s.desc}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {introPreview && (
+                      <IntroPreview
+                        style={introPreview}
+                        label={
+                          INTRO_STYLES.find((x) => x.id === introPreview)?.label ??
+                          ""
+                        }
+                        card={card}
+                        accent={accent}
+                        active={(card.introStyle ?? "card") === introPreview}
+                        onSelect={() => set("introStyle", introPreview)}
+                        onClose={() => setIntroPreview(null)}
+                      />
+                    )}
+                  </Panel>
+
                   {/* Hero effect — only for hero-sheet layouts (e.g. Luxe) */}
                   {currentTemplate?.layout === "lookbook" && (
                     <Panel
@@ -992,6 +1072,24 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
                                 <Text label="Account number" value={card.payment?.accountNumber ?? ""} onChange={(v) => setPayment("accountNumber", v)} />
                               </Grid2>
                               <Text label="IFSC" value={card.payment?.ifsc ?? ""} onChange={(v) => setPayment("ifsc", v)} />
+                              {card.payment?.upiId && (
+                                <>
+                                  <Text
+                                    label="Pay amount (₹) — optional"
+                                    value={card.payment?.amount ?? ""}
+                                    onChange={(v) => setPayment("amount", v)}
+                                    placeholder="Leave empty to let visitors enter the amount"
+                                  />
+                                  <div className="border-t border-border pt-4">
+                                    <Toggle
+                                      label="Show Pay button"
+                                      hint="Adds a UPI Pay button visitors can tap to pay you via GPay / PhonePe."
+                                      checked={card.payment?.showPayButton !== false}
+                                      onChange={(v) => setPayment("showPayButton", v)}
+                                    />
+                                  </div>
+                                </>
+                              )}
                             </Panel>
                           );
                         case "businessHours":

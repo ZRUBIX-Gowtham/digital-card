@@ -6,6 +6,8 @@ import { ArrowUpRight } from "lucide-react";
 import { getCardFromStore, incrementCardViews } from "@/lib/cards-store";
 import { logEvent, metaFromHeaders } from "@/lib/analytics-store";
 import { CardRenderer } from "@/components/card-templates/registry";
+import { CardIntro } from "@/components/card/CardIntro";
+import { getTemplate, templates } from "@/data/templates";
 import { siteConfig } from "@/lib/site";
 
 // Cards are editable at runtime (file store), so render on demand rather than
@@ -68,11 +70,17 @@ export default async function UsernameCardPage({
   // app tokens) so this page never follows the global chrome toggle.
   const darkCard = card.theme === "dark";
 
+  // Accent resolved the same way CardRenderer does, so the intro splash matches
+  // the card's brand colour.
+  const meta = getTemplate(card.templateId) ?? templates[0];
+  const accent = card.accent ?? meta.style.accent;
+
   return (
     <main
       className={`min-h-screen py-0  ${darkCard ? "card-dark bg-black" : "bg-slate-50"
         }`}
     >
+      <CardIntro card={card} accent={accent} />
       <div className="mx-auto w-full max-w-[430px]">
         <CardRenderer card={{ ...card, views }} />
       </div>

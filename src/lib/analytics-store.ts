@@ -1,7 +1,8 @@
 import "server-only";
 import { db } from "@/lib/firebase";
-import { collection, query, getDocs, addDoc } from "firebase/firestore";
+import { collection, query, getDocs, addDoc, doc, setDoc, increment } from "firebase/firestore";
 import { parseUserAgent, type DeviceKind } from "@/lib/ua";
+import { pulseDocPath } from "@/lib/pulse";
 
 export type EventType =
   | "view"
@@ -10,6 +11,7 @@ export type EventType =
   | "email"
   | "map"
   | "save-contact"
+  | "pay"
   | "enquiry"
   | "booking";
 
@@ -19,6 +21,7 @@ export const ACTION_TYPES: EventType[] = [
   "email",
   "map",
   "save-contact",
+  "pay",
   "enquiry",
   "booking",
 ];
@@ -115,6 +118,18 @@ export async function logEvent(
       }
     }
     await addDoc(collection(db, "cards", cardSlug, "analytics"), event);
+
+    // Bump the card's pulse counter so any open dashboard refreshes in real
+    // time. Best-effort and non-sensitive (just a counter) — never block on it.
+    try {
+      await setDoc(
+        doc(db, ...pulseDocPath(cardSlug)),
+        { n: increment(1), at: event.at },
+        { merge: true },
+      );
+    } catch {
+      /* pulse is optional */
+    }
   } catch (error) {
     console.error("Error logging analytics event:", error);
   }
@@ -158,7 +173,10 @@ export interface VisitRow {
 }
 
 export interface AnalyticsSummary {
+  /** Every view in the window — one per page load (matches the raw counter). */
   totalViews: number;
+  /** Views after collapsing repeat loads from the same visitor. */
+  uniqueVisits: number;
   totalActions: number;
   daily: { date: string; label: string; views: number }[];
   actions: { type: EventType; count: number }[];
@@ -174,6 +192,14 @@ export interface AnalyticsSummary {
 /** Cap how many dots/rows we ship to the browser, newest first. */
 const MAX_POINTS = 2000;
 const MAX_VISIT_ROWS = 60;
+
+/**
+ * Two views from the same visitor within this window count as a single visit.
+ * The public card is `force-dynamic`, so a prefetch, a double navigation or a
+ * link-unfurl bot can log the same open twice (often one request resolves the
+ * city and the other only the country) — this collapses those into one.
+ */
+const VIEW_DEDUPE_MS = 5 * 60 * 1000;
 
 const DEVICE_LABELS: Record<DeviceKind, string> = {
   mobile: "Mobile",
@@ -199,7 +225,51 @@ function topBreakdown(counts: Map<string, number>, limit = 8): Breakdown[] {
     .slice(0, limit);
 }
 
-export async function analyticsForCard(cardSlug: string, days = 14): Promise<AnalyticsSummary> {
+/** The date windows the dashboard can filter analytics by. */
+export type RangeKey = "today" | "7d" | "30d" | "all";
+
+/** Days each range covers — `undefined` means all time (no cutoff). */
+export const RANGE_DAYS: Record<RangeKey, number | undefined> = {
+  today: 1,
+  "7d": 7,
+  "30d": 30,
+  all: undefined,
+};
+
+export const RANGE_LABELS: Record<RangeKey, string> = {
+  today: "Today",
+  "7d": "7 days",
+  "30d": "30 days",
+  all: "All time",
+};
+
+/** Narrow an arbitrary string (e.g. a URL param) to a valid range key. */
+export function toRangeKey(value: string | undefined): RangeKey {
+  return value && value in RANGE_DAYS ? (value as RangeKey) : "7d";
+}
+
+/** "City, Country" for a visit — either part may be missing. */
+function placeLabel(e: VisitMeta): string {
+  return [e.city, e.country ? countryName(e.country) : undefined]
+    .filter(Boolean)
+    .join(", ");
+}
+
+/**
+ * Fetch a card's events, newest-first, with duplicate views collapsed and the
+ * list clipped to the requested window. Shared by the dashboard summary and the
+ * CSV export so both see exactly the same visits. `chartDays` is how many daily
+ * bars the summary should draw for the resolved window.
+ */
+async function loadEvents(
+  cardSlug: string,
+  rangeDays?: number,
+): Promise<{
+  events: CardEvent[];
+  chartDays: number;
+  rawViews: number;
+  viewsByDayRaw: Map<string, number>;
+}> {
   let events: CardEvent[] = [];
   try {
     const q = query(collection(db, "cards", cardSlug, "analytics"));
@@ -213,7 +283,64 @@ export async function analyticsForCard(cardSlug: string, days = 14): Promise<Ana
   // latest activity (and we keep the most recent when we hit the caps).
   events.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
 
-  const viewsByDay = new Map<string, number>();
+  // Restrict everything to the selected window (undefined = all time). Days are
+  // counted as whole calendar days ending today, matching the chart.
+  const now = new Date();
+  let chartDays: number;
+  if (rangeDays && rangeDays > 0) {
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - (rangeDays - 1));
+    const cutoff = start.getTime();
+    events = events.filter((e) => Date.parse(e.at) >= cutoff);
+    chartDays = rangeDays;
+  } else {
+    // All time: size the daily chart to span from the first recorded event.
+    const oldest = events.length ? Date.parse(events[events.length - 1].at) : now.getTime();
+    const span = Math.ceil((now.getTime() - oldest) / 86_400_000) + 1;
+    chartDays = Math.min(90, Math.max(7, span));
+  }
+
+  // Raw view totals — counted from every load in the window, before dedupe, so
+  // the "Total views" stat and the daily chart match the running page counter.
+  let rawViews = 0;
+  const viewsByDayRaw = new Map<string, number>();
+  for (const e of events) {
+    if (e.type !== "view") continue;
+    rawViews++;
+    const key = dayKey(new Date(e.at));
+    viewsByDayRaw.set(key, (viewsByDayRaw.get(key) ?? 0) + 1);
+  }
+
+  // Collapse duplicate views from the same visitor (prefetch, double-load or a
+  // link-unfurl bot) so one open counts as one visit — this feeds the "Unique
+  // visits" stat and every breakdown. Actions are always kept; only views with
+  // a matching device/OS/browser/country in the dedupe window are dropped, and
+  // the newest (most detailed) one survives.
+  const deduped: CardEvent[] = [];
+  let lastView: { t: number; fp: string } | undefined;
+  for (const e of events) {
+    if (e.type === "view") {
+      const t = Date.parse(e.at);
+      const fp = `${e.device ?? ""}|${e.os ?? ""}|${e.browser ?? ""}|${e.country ?? ""}`;
+      if (lastView && lastView.fp === fp && lastView.t - t <= VIEW_DEDUPE_MS) {
+        continue;
+      }
+      lastView = { t, fp };
+    }
+    deduped.push(e);
+  }
+
+  return { events: deduped, chartDays, rawViews, viewsByDayRaw };
+}
+
+export async function analyticsForCard(
+  cardSlug: string,
+  rangeDays?: number,
+): Promise<AnalyticsSummary> {
+  const { events, chartDays, rawViews, viewsByDayRaw } = await loadEvents(cardSlug, rangeDays);
+  const now = new Date();
+
   const actionCounts = new Map<EventType, number>();
   const referrerCounts = new Map<string, number>();
   const deviceCounts = new Map<string, number>();
@@ -222,20 +349,16 @@ export async function analyticsForCard(cardSlug: string, days = 14): Promise<Ana
   const locationCounts = new Map<string, number>();
   const points: GeoPoint[] = [];
   const visits: VisitRow[] = [];
-  let totalViews = 0;
+  let uniqueVisits = 0;
   let totalActions = 0;
 
   const bump = (m: Map<string, number>, key?: string) => {
     if (key) m.set(key, (m.get(key) ?? 0) + 1);
   };
-  const placeLabel = (e: CardEvent): string =>
-    [e.city, e.country ? countryName(e.country) : undefined].filter(Boolean).join(", ");
 
   for (const e of events) {
     if (e.type === "view") {
-      totalViews++;
-      const key = dayKey(new Date(e.at));
-      viewsByDay.set(key, (viewsByDay.get(key) ?? 0) + 1);
+      uniqueVisits++;
       if (e.ref) referrerCounts.set(e.ref, (referrerCounts.get(e.ref) ?? 0) + 1);
 
       // One row per visit for the "recent visitors" report.
@@ -259,26 +382,28 @@ export async function analyticsForCard(cardSlug: string, days = 14): Promise<Ana
     bump(browserCounts, e.browser);
     bump(osCounts, e.os);
 
-    const label = placeLabel(e);
-    if (label) bump(locationCounts, label);
+    // Group locations by country so every visit within a country rolls up into
+    // one row (e.g. "Chennai, India" and a city-less "India" both count as
+    // India) — the city stays visible in the map dots and recent-visitors table.
+    const region = e.country ? countryName(e.country) : e.city;
+    if (region) bump(locationCounts, region);
 
     // Every visit with coordinates becomes its own dot — the map jitters
     // overlapping city-level points so each visitor is individually visible.
     if (typeof e.lat === "number" && typeof e.lng === "number" && points.length < MAX_POINTS) {
-      points.push({ lat: e.lat, lng: e.lng, label: label || "Unknown" });
+      points.push({ lat: e.lat, lng: e.lng, label: placeLabel(e) || "Unknown" });
     }
   }
 
   const daily: AnalyticsSummary["daily"] = [];
-  const today = new Date();
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
+  for (let i = chartDays - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(now.getDate() - i);
     const key = dayKey(d);
     daily.push({
       date: key,
       label: d.toLocaleDateString(undefined, { day: "numeric", month: "short" }),
-      views: viewsByDay.get(key) ?? 0,
+      views: viewsByDayRaw.get(key) ?? 0,
     });
   }
 
@@ -293,7 +418,8 @@ export async function analyticsForCard(cardSlug: string, days = 14): Promise<Ana
     .slice(0, 6);
 
   return {
-    totalViews,
+    totalViews: rawViews,
+    uniqueVisits,
     totalActions,
     daily,
     actions,
@@ -305,4 +431,38 @@ export async function analyticsForCard(cardSlug: string, days = 14): Promise<Ana
     points,
     visits,
   };
+}
+
+/** Escape one CSV field: wrap in quotes and double any embedded quotes. */
+function csvField(value: string | number | undefined): string {
+  const s = value == null ? "" : String(value);
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
+/**
+ * Build a CSV of every visit (view event) in the window — one row per visit,
+ * uncapped, newest first. Used by the analytics "Export CSV" download.
+ */
+export async function visitsCsvForCard(cardSlug: string, rangeDays?: number): Promise<string> {
+  const { events } = await loadEvents(cardSlug, rangeDays);
+  const header = ["When (ISO)", "Location", "Country", "Device", "OS", "Browser", "Referrer"];
+  const rows = [header.map(csvField).join(",")];
+
+  for (const e of events) {
+    if (e.type !== "view") continue;
+    rows.push(
+      [
+        csvField(e.at),
+        csvField(placeLabel(e)),
+        csvField(e.country ? countryName(e.country) : ""),
+        csvField(e.device ? DEVICE_LABELS[e.device] : ""),
+        csvField(e.os),
+        csvField(e.browser),
+        csvField(e.ref),
+      ].join(","),
+    );
+  }
+
+  // Prepend a BOM so Excel opens UTF-8 city names (e.g. accented places) right.
+  return "﻿" + rows.join("\r\n");
 }
