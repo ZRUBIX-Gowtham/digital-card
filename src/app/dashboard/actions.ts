@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/auth";
 import { saveCardToStore, getCardFromStore } from "@/lib/cards-store";
 import { getTemplate } from "@/data/templates";
+import type { SignatureConfig } from "@/types/card";
 
 export interface ChangeTemplateResult {
   ok: boolean;
@@ -39,6 +40,32 @@ export async function changeTemplateAction(
   revalidatePath(`/${user.cardSlug}`);
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/edit");
+
+  return { ok: true };
+}
+
+/**
+ * Save the signed-in user's email-signature configuration (chosen design plus
+ * per-field text overrides and hidden fields). Ownership comes from the
+ * session; only the `signature` field is touched on the card.
+ */
+export async function saveSignatureAction(
+  config: SignatureConfig,
+): Promise<ChangeTemplateResult> {
+  const user = await getSession();
+  if (!user) return { ok: false, error: "You must be signed in." };
+
+  const existing = await getCardFromStore(user.cardSlug);
+  if (!existing) return { ok: false, error: "No card is linked to your account." };
+
+  await saveCardToStore({
+    ...existing,
+    slug: user.cardSlug,
+    views: existing.views,
+    signature: config,
+  });
+
+  revalidatePath("/dashboard/signature");
 
   return { ok: true };
 }

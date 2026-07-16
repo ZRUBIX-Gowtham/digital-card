@@ -82,6 +82,7 @@ import { IntroPreview } from "@/components/dashboard/IntroPreview";
 import { PhoneFrame } from "@/components/card/PhoneFrame";
 import { Container } from "@/components/ui/Container";
 import { saveCardAction } from "@/app/dashboard/edit/actions";
+import { generateProfileFromPrompt, improveTextWithAI } from "@/app/actions/ai-actions";
 
 /**
  * Coordinates the collapsible editor panels so at most two are open at once
@@ -309,6 +310,9 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
   const [pending, startTransition] = useTransition();
   const [status, setStatus] = useState<null | { ok: boolean; msg: string }>(null);
   const [activeTab, setActiveTab] = useState<"content" | "design">("content");
+  const [isAiLoading, setIsAiLoading] = useState<string | null>(null);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [showAiModal, setShowAiModal] = useState(false);
   // Mobile-only: the live preview is shown in a full-screen popup on tap.
   const [previewOpen, setPreviewOpen] = useState(false);
   // Section whose layout picker is currently open (opens automatically when a
@@ -434,6 +438,42 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
       booking: { ...(c.booking ?? { enabled: true }), [key]: value },
     }));
     setStatus(null);
+  }
+
+  async function handleAiImprove(fieldId: keyof CardData, currentValue: string, contextContext: string) {
+    if (!currentValue.trim()) return;
+    setIsAiLoading(fieldId as string);
+    const res = await improveTextWithAI(currentValue, contextContext);
+    if (res.ok && res.data) {
+      set(fieldId, res.data);
+      setStatus({ ok: true, msg: "Text improved by AI!" });
+    } else {
+      setStatus({ ok: false, msg: res.error || "Failed to improve text." });
+    }
+    setIsAiLoading(null);
+  }
+
+  async function handleAutoFill() {
+    if (!aiPrompt.trim()) return;
+    setIsAiLoading("autofill");
+    const res = await generateProfileFromPrompt(aiPrompt);
+    if (res.ok && res.data) {
+      setCard((c) => ({
+        ...c,
+        name: res.data.name || c.name,
+        title: res.data.title || c.title,
+        company: res.data.company || c.company,
+        tagline: res.data.tagline || c.tagline,
+        about: res.data.about || c.about,
+        services: res.data.services || c.services,
+      }));
+      setStatus({ ok: true, msg: "Profile autofilled by AI!" });
+      setShowAiModal(false);
+      setAiPrompt("");
+    } else {
+      setStatus({ ok: false, msg: res.error || "Failed to autofill profile." });
+    }
+    setIsAiLoading(null);
   }
 
   /** Restore layout, colour and text size to what this card started with. */
@@ -847,9 +887,59 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
                 <div className="space-y-6 animate-fade-up">
                   {/* Profile */}
                   <Panel collapsible defaultOpen icon={Icons.User} title="Profile" desc="Your name, role, company and tagline.">
+                    <div className="mb-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowAiModal(true)}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-brand bg-brand/5 px-4 py-2 text-sm font-semibold text-brand transition-colors hover:bg-brand/10 w-full justify-center cursor-pointer"
+                      >
+                        <Icons.Sparkles className="h-4 w-4" />
+                        AI Auto-fill Profile
+                      </button>
+                    </div>
+
+                    {showAiModal && (
+                      <div className="mb-4 rounded-xl border border-brand bg-brand/5 p-4 relative">
+                        <button onClick={() => setShowAiModal(false)} className="absolute right-2 top-2 text-muted hover:text-foreground cursor-pointer">
+                          <Icons.X className="h-4 w-4" />
+                        </button>
+                        <h4 className="text-sm font-bold text-brand mb-2 flex items-center gap-1.5">
+                          <Icons.Sparkles className="h-4 w-4" /> AI Profile Creator
+                        </h4>
+                        <p className="text-xs text-muted mb-3">
+                          Type a brief description about yourself, your profession, and what you do. We&apos;ll generate a professional profile for you.
+                        </p>
+                        <textarea
+                          rows={3}
+                          value={aiPrompt}
+                          onChange={(e) => setAiPrompt(e.target.value)}
+                          placeholder="e.g. I am John, a real estate agent based in New York helping people find luxury homes."
+                          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand mb-3"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAutoFill}
+                          disabled={isAiLoading === "autofill"}
+                          className="w-full rounded-lg bg-brand py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 cursor-pointer"
+                        >
+                          {isAiLoading === "autofill" ? "Generating..." : "Generate Profile"}
+                        </button>
+                      </div>
+                    )}
+
                     <Grid2>
-                      <Text label="Full name" value={card.name} onChange={(v) => set("name", v)} />
-                      <Text label="Title / role" value={card.title} onChange={(v) => set("title", v)} />
+                      <Text 
+                        label="Full name" 
+                        value={card.name} 
+                        onChange={(v) => set("name", v)} 
+                      />
+                      <Text 
+                        label="Title / role" 
+                        value={card.title} 
+                        onChange={(v) => set("title", v)} 
+                        onAiClick={() => handleAiImprove("title", card.title, "job title")}
+                        aiPending={isAiLoading === "title"}
+                      />
                     </Grid2>
                     <Grid2>
                       <Text label="Company" value={card.company} onChange={(v) => set("company", v)} />
@@ -859,7 +949,13 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
                         onChange={(v) => set("logoText", v)}
                       />
                     </Grid2>
-                    <Text label="Tagline" value={card.tagline ?? ""} onChange={(v) => set("tagline", v)} />
+                    <Text 
+                      label="Tagline" 
+                      value={card.tagline ?? ""} 
+                      onChange={(v) => set("tagline", v)}
+                      onAiClick={() => handleAiImprove("tagline", card.tagline ?? "", "professional tagline")}
+                      aiPending={isAiLoading === "tagline"} 
+                    />
                   </Panel>
 
                   {/* Profile views */}
@@ -980,6 +1076,8 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
                                 value={card.about ?? ""}
                                 onChange={(v) => set("about", v)}
                                 placeholder="Tell visitors about your background or company..."
+                                onAiClick={() => handleAiImprove("about", card.about ?? "", "biography or about us section")}
+                                aiPending={isAiLoading === "about"}
                               />
                             </Panel>
                           );
@@ -1080,12 +1178,18 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
                                     onChange={(v) => setPayment("amount", v)}
                                     placeholder="Leave empty to let visitors enter the amount"
                                   />
-                                  <div className="border-t border-border pt-4">
+                                  <div className="space-y-4 border-t border-border pt-4">
                                     <Toggle
                                       label="Show Pay button"
                                       hint="Adds a UPI Pay button visitors can tap to pay you via GPay / PhonePe."
                                       checked={card.payment?.showPayButton !== false}
                                       onChange={(v) => setPayment("showPayButton", v)}
+                                    />
+                                    <Toggle
+                                      label="Show QR code"
+                                      hint="Shows a scan-to-pay UPI QR code visitors can scan from any UPI app."
+                                      checked={card.payment?.showQr !== false}
+                                      onChange={(v) => setPayment("showQr", v)}
                                     />
                                   </div>
                                 </>
@@ -2337,27 +2441,26 @@ function Toggle({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="flex w-full items-center justify-between gap-4 text-left"
-    >
+    <div className="flex w-full items-center justify-between gap-4 text-left">
       <span>
         <span className="block text-sm font-medium text-foreground">{label}</span>
         {hint && <span className="mt-0.5 block text-xs text-muted">{hint}</span>}
       </span>
-      <span
-        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${checked ? "bg-brand" : "bg-slate-300"
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${checked ? "bg-brand" : "bg-slate-300"
           }`}
       >
         <span
           className={`inline-block h-5 w-5 transform rounded-full bg-surface shadow transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"
             }`}
         />
-      </span>
-    </button>
+      </button>
+    </div>
   );
 }
 
@@ -3029,15 +3132,32 @@ function Text({
   value,
   onChange,
   placeholder,
+  onAiClick,
+  aiPending,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  onAiClick?: () => void;
+  aiPending?: boolean;
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium text-muted">{label}</span>
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="block text-xs font-medium text-muted">{label}</span>
+        {onAiClick && (
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); onAiClick(); }}
+            disabled={aiPending}
+            className="flex items-center gap-1 text-[10px] font-semibold text-brand hover:underline disabled:opacity-50 cursor-pointer"
+          >
+            <Icons.Sparkles className="h-3 w-3" />
+            {aiPending ? "Improving..." : "Improve with AI"}
+          </button>
+        )}
+      </div>
       <input
         type="text"
         value={value}
@@ -3054,15 +3174,32 @@ function TextArea({
   value,
   onChange,
   placeholder,
+  onAiClick,
+  aiPending,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  onAiClick?: () => void;
+  aiPending?: boolean;
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium text-muted">{label}</span>
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="block text-xs font-medium text-muted">{label}</span>
+        {onAiClick && (
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); onAiClick(); }}
+            disabled={aiPending}
+            className="flex items-center gap-1 text-[10px] font-semibold text-brand hover:underline disabled:opacity-50 cursor-pointer"
+          >
+            <Icons.Sparkles className="h-3 w-3" />
+            {aiPending ? "Improving..." : "Improve with AI"}
+          </button>
+        )}
+      </div>
       <textarea
         value={value}
         placeholder={placeholder}

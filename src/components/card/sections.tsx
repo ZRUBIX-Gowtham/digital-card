@@ -346,12 +346,14 @@ export function PaymentSection({ card, accent }: { card: CardData; accent: strin
         {p.accountName && <Row label="Account Name" value={p.accountName} />}
         {p.accountNumber && <Row label="A/C No." value={p.accountNumber} />}
         {p.ifsc && <Row label="IFSC" value={p.ifsc} />}
-        {p.upiId && p.showPayButton !== false && (
+        {p.upiId && (p.showPayButton !== false || p.showQr !== false) && (
           <UpiPay
             upiId={p.upiId}
             payeeName={p.accountName || card.name}
             accent={accent}
             fixedAmount={p.amount}
+            showButton={p.showPayButton !== false}
+            showQr={p.showQr !== false}
           />
         )}
       </div>

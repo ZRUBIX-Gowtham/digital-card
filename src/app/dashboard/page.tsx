@@ -70,10 +70,10 @@ export default async function DashboardPage() {
                         Signed in as {user.email}
                       </p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2.5">
+                    <div className="flex w-full flex-col sm:w-auto sm:flex-row items-stretch gap-2.5">
                       <Link
                         href="/dashboard/edit?tab=content"
-                        className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                        className="flex w-full sm:inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
                       >
                         <Pencil className="h-4 w-4" /> Edit card
                       </Link>
@@ -81,7 +81,7 @@ export default async function DashboardPage() {
                         href={`/${card.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-hover"
+                        className="flex w-full sm:inline-flex items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-hover"
                       >
                         <ExternalLink className="h-4 w-4" /> View live
                       </a>
@@ -90,12 +90,12 @@ export default async function DashboardPage() {
                 </section>
 
                 {/* Stats row */}
-                <section className="grid gap-4 sm:grid-cols-3">
+                <section className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                   <StatCard
                     icon={<Eye className="h-5 w-5" />}
                     label="Profile views"
                     value={totalViews.toLocaleString()}
-                    hint="All-time · updates in real time"
+                    hint="All-time"
                     live
                   />
                   <StatCard
@@ -106,6 +106,7 @@ export default async function DashboardPage() {
                     accent={template?.style.accent ?? card.accent}
                   />
                   <StatCard
+                    className="col-span-2 sm:col-span-1"
                     icon={
                       (card.theme ?? "light") === "dark" ? (
                         <Moon className="h-5 w-5" />
@@ -152,8 +153,8 @@ export default async function DashboardPage() {
                 </section>
               </div>
 
-              {/* ============ RIGHT: live preview (bottom on mobile, sticky on desktop) ============ */}
-              <section className="rounded-2xl border border-border bg-surface p-5 lg:sticky lg:top-6">
+              {/* ============ RIGHT: live preview (hidden on mobile, sticky on desktop) ============ */}
+              <section className="hidden lg:block rounded-2xl border border-border bg-surface p-5 lg:sticky lg:top-6">
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-sm font-bold text-foreground">Live preview</h2>
                   <a
@@ -199,6 +200,7 @@ function StatCard({
   hint,
   live,
   accent,
+  className,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -206,9 +208,10 @@ function StatCard({
   hint?: string;
   live?: boolean;
   accent?: string;
+  className?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5">
+    <div className={`rounded-2xl border border-border bg-surface p-5 ${className ?? ""}`}>
       <div className="flex items-center justify-between">
         <span
           className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand"

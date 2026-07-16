@@ -131,9 +131,40 @@ export interface PaymentInfo {
   ifsc?: string;
   /** Whether the "Pay via UPI" button is shown to visitors. Defaults to on. */
   showPayButton?: boolean;
+  /** Whether the scan-to-pay QR code is shown to visitors. Defaults to on. */
+  showQr?: boolean;
   /** Fixed amount (₹) to pre-fill the UPI payment with. Empty = visitor enters
    *  the amount themselves in their UPI app. */
   amount?: string;
+}
+
+/**
+ * Email-signature configuration: the chosen design plus per-field text
+ * overrides and a list of fields the user has removed. Empty overrides fall
+ * back to the matching card field (see src/lib/signature.ts).
+ */
+export interface SignatureConfig {
+  /** Chosen signature design id. */
+  template?: string;
+  /** Accent colour (hex) for the signature. Falls back to the card accent. */
+  accent?: string;
+  /** Font-family stack applied across the signature. */
+  font?: string;
+  /** Primary text colour (name + contact values). */
+  textColor?: string;
+  name?: string;
+  title?: string;
+  company?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  address?: string;
+  /** Photo URL used in the signature (falls back to the card avatar). */
+  photo?: string;
+  /** Social handles keyed by platform, e.g. { linkedin: "..." }. */
+  socials?: Record<string, string>;
+  /** Field keys the user removed from the signature, e.g. ["address"]. */
+  hide?: string[];
 }
 
 /** Lead-capture "Enquiry" form shown on the public card. */
@@ -219,6 +250,8 @@ export interface CardData {
   enquiry?: EnquiryConfig;
   /** Appointment / booking request form. */
   booking?: BookingConfig;
+  /** Email-signature design + per-field overrides (see src/lib/signature.ts). */
+  signature?: SignatureConfig;
   sectionsOrder?: string[];
   /** Per-section display style, e.g. { testimonials: "carousel-auto" }. */
   sectionStyles?: Record<string, string>;

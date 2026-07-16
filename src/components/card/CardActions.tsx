@@ -1,6 +1,6 @@
 "use client";
 
-import { Phone, Mail, MapPin, Download, IndianRupee } from "lucide-react";
+import { Phone, Mail, MapPin, Download } from "lucide-react";
 import { WhatsappIcon } from "./brand-icons";
 import type { CardData } from "@/types/card";
 import { downloadVCard } from "@/lib/vcard";
@@ -52,21 +52,6 @@ export function CardActions({
       icon: MapPin,
       href: contact.mapUrl,
       external: true,
-    },
-    card.payment?.upiId && card.payment.showPayButton !== false && {
-      key: "pay",
-      label: "Pay",
-      icon: IndianRupee,
-      href: `upi://pay?${(() => {
-        const params = new URLSearchParams({
-          pa: card.payment.upiId,
-          pn: card.payment.accountName || card.name,
-          cu: "INR",
-        });
-        const amt = Number(card.payment.amount);
-        if (Number.isFinite(amt) && amt > 0) params.set("am", amt.toFixed(2));
-        return params.toString();
-      })()}`,
     },
   ].filter(Boolean) as {
     key: string;

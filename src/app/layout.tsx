@@ -110,16 +110,15 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
-        {/* Apply the saved (or system) theme synchronously, before first paint, so
-            there's no light→dark flash. This MUST be a raw inline <script> in
-            <head>. Falls back to the OS colour scheme when
-            no explicit choice is stored. */}
-        <script
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.classList.toggle('dark',t==='dark');}catch(e){}})();`,
-          }}
-        />
+        {/* Apply the saved (or system) theme synchronously, before first paint,
+            so there's no light→dark flash. Rendered via next/script with the
+            beforeInteractive strategy: it's injected into the initial HTML head
+            (still flash-free) but isn't reconciled as a React DOM element, which
+            avoids React 19's "script inside a component" hydration warning.
+            Falls back to the OS colour scheme when no explicit choice is stored. */}
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`(function(){try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.classList.toggle('dark',t==='dark');}catch(e){}})();`}
+        </Script>
         <script
           type="application/ld+json"
           suppressHydrationWarning

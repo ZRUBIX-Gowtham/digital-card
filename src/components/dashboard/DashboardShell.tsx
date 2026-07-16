@@ -2,15 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   Pencil,
   BarChart3,
   Inbox,
   LayoutTemplate,
+  Mail,
   ExternalLink,
   LogOut,
   ArrowLeft,
+  Menu,
+  X,
 } from "lucide-react";
 import { Logo } from "@/components/marketing/Logo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -48,6 +53,7 @@ export function DashboardShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const nav: NavItem[] = [
     { href: "/dashboard", label: "Overview", short: "Home", icon: LayoutDashboard, exact: true },
@@ -55,6 +61,7 @@ export function DashboardShell({
     { href: "/dashboard/analytics", label: "Analytics", short: "Stats", icon: BarChart3 },
     { href: "/dashboard/leads", label: "Leads", short: "Leads", icon: Inbox, badge: unreadLeads },
     { href: "/dashboard/templates", label: "Change Template", short: "Design", icon: LayoutTemplate },
+    { href: "/dashboard/signature", label: "Mail Signature", short: "Signature", icon: Mail },
   ];
 
   const isActive = (item: NavItem) => {
@@ -65,6 +72,14 @@ export function DashboardShell({
   // The full-screen editor has its own fixed mobile action bar, so the shell's
   // bottom tab bar is suppressed there to avoid two overlapping bottom bars.
   const hideMobileTabBar = pathname.startsWith("/dashboard/edit");
+
+  const mobileMainNav = [
+    nav[1], // Edit
+    nav[2], // Stats
+    nav[0], // Home
+    nav[3], // Leads
+  ];
+  const mobileMoreNav = nav.slice(4);
 
   return (
     <div className="min-h-screen bg-surface-2/40 lg:flex">
@@ -168,11 +183,11 @@ export function DashboardShell({
 
         {/* Mobile bottom tab bar */}
         <nav
-          className={`fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur lg:hidden ${hideMobileTabBar ? "hidden" : ""
+          className={`fixed inset-x-0 bottom-0 z-50 border-t border-border bg-surface/95 backdrop-blur lg:hidden ${hideMobileTabBar ? "hidden" : ""
             }`}
         >
           <div className="mx-auto flex max-w-md items-stretch justify-around px-1 pb-[env(safe-area-inset-bottom)]">
-            {nav.map((item) => {
+            {mobileMainNav.map((item) => {
               const active = isActive(item);
               const Icon = item.icon;
               return (
@@ -200,8 +215,84 @@ export function DashboardShell({
                 </Link>
               );
             })}
+            
+            {/* More Button */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-semibold text-muted transition-colors hover:text-foreground"
+            >
+              <span className="relative flex h-8 w-full items-center justify-center">
+                <span className="flex h-8 w-14 items-center justify-center rounded-full transition-colors">
+                  <Menu className="h-[18px] w-[18px]" />
+                </span>
+              </span>
+              More
+            </button>
           </div>
         </nav>
+
+        {/* Mobile More Drawer */}
+        <AnimatePresence>
+          {mobileMenuOpen && !hideMobileTabBar && (
+            <motion.div 
+              key="more-drawer"
+              className="fixed inset-0 z-40 flex flex-col justify-end lg:hidden"
+              style={{ paddingBottom: 'calc(68px + env(safe-area-inset-bottom))' }}
+            >
+              <motion.div 
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
+                onClick={() => setMobileMenuOpen(false)}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              />
+              <motion.div 
+                className="relative rounded-t-3xl border-t border-border bg-surface px-6 pb-8 pt-6 shadow-2xl"
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 250 }}
+              >
+                <div className="mb-6 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-foreground">More options</h3>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-full bg-surface-hover p-2 text-foreground transition-colors hover:bg-border"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="grid gap-3">
+                {mobileMoreNav.map((item) => {
+                  const active = isActive(item);
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-colors ${
+                        active
+                          ? "bg-brand text-white"
+                          : "bg-surface-hover text-foreground hover:bg-border"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5 shrink-0" />
+                      <span className="flex-1">{item.label}</span>
+                      {item.badge ? (
+                        <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-brand px-1.5 py-0.5 text-[11px] font-bold text-white">
+                          {item.badge}
+                        </span>
+                      ) : null}
+                    </Link>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
