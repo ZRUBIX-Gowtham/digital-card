@@ -40,10 +40,10 @@ export const siteConfig = {
     twitter: "https://twitter.com/digitalsite",
   },
   nav: [
-    { label: "Features", href: "/#features" },
-    { label: "Templates", href: "/#templates" },
-    { label: "Pricing", href: "/#pricing" },
-    { label: "Testimonials", href: "/#testimonials" },
+    { label: "Features", href: "/features" },
+    { label: "Templates", href: "/templates" },
+    { label: "Pricing", href: "/pricing" },
+    { label: "Testimonials", href: "/testimonials" },
     { label: "Contact", href: "/contact" },
   ],
   legal: [

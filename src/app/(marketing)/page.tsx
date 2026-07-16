@@ -2,6 +2,8 @@ import { Hero } from "@/components/marketing/Hero";
 import { TrustBar } from "@/components/marketing/TrustBar";
 import { BeforeAfter } from "@/components/marketing/BeforeAfter";
 import { Features } from "@/components/marketing/Features";
+import { WhatIsDigitalSite } from "@/components/marketing/WhatIsDigitalSite";
+import { EmailSignatureFeature } from "@/components/marketing/EmailSignatureFeature";
 import { HowItWorks } from "@/components/marketing/HowItWorks";
 import { TemplatesShowcase } from "@/components/marketing/TemplatesShowcase";
 import { Pricing } from "@/components/marketing/Pricing";
@@ -22,6 +24,12 @@ export default function HomePage() {
       </Reveal>
       <Reveal>
         <Features limit={6} />
+      </Reveal>
+      <Reveal>
+        <WhatIsDigitalSite />
+      </Reveal>
+      <Reveal>
+        <EmailSignatureFeature />
       </Reveal>
       <Reveal>
         <HowItWorks />
