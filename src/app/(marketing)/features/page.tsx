@@ -3,6 +3,7 @@ import { Features } from "@/components/marketing/Features";
 import { WhatIsDigitalSite } from "@/components/marketing/WhatIsDigitalSite";
 import { HowItWorks } from "@/components/marketing/HowItWorks";
 import { EmailSignatureFeature } from "@/components/marketing/EmailSignatureFeature";
+import { QrCodeFeature } from "@/components/marketing/QrCodeFeature";
 import { CTA } from "@/components/marketing/CTA";
 import { PageHero } from "@/components/marketing/PageHero";
 
@@ -26,6 +27,7 @@ export default function FeaturesPage() {
       <Features />
       <WhatIsDigitalSite />
       <EmailSignatureFeature />
+      <QrCodeFeature />
       <HowItWorks />
       <CTA />
     </>

@@ -167,6 +167,61 @@ export interface SignatureConfig {
   hide?: string[];
 }
 
+/** Language codes the card content can be shown in. English is the base. */
+export type LangCode = "en" | "ta" | "hi";
+
+/**
+ * AI-generated translation of a card's narrative text into one language.
+ * Only prose and labels are translated — proper nouns (person/company/brand/
+ * product names), numbers, prices, emails and links stay as they are. Any
+ * missing field falls back to the base (English) card value, and array fields
+ * are matched to the base card by index (see src/lib/i18n.ts).
+ */
+export interface CardTranslation {
+  title?: string;
+  tagline?: string;
+  about?: string;
+  businessType?: string;
+  services?: { title?: string; description?: string }[];
+  testimonials?: { role?: string; feedback?: string }[];
+  faqs?: { question?: string; answer?: string }[];
+  cta?: { title?: string; subtitle?: string; buttonLabel?: string };
+  businessHours?: { day?: string; hours?: string }[];
+  brochures?: { title?: string }[];
+  team?: { role?: string }[];
+  stats?: { label?: string }[];
+  awards?: { title?: string; issuer?: string }[];
+  gallery?: { alt?: string }[];
+  shop?: { name?: string; products?: { name?: string; ctaLabel?: string }[] }[];
+  enquiry?: { title?: string; subtitle?: string; buttonLabel?: string };
+  booking?: {
+    title?: string;
+    subtitle?: string;
+    buttonLabel?: string;
+    services?: string[];
+  };
+}
+
+/** Quick-contact action a floating button can trigger. */
+export type FloatingAction = "whatsapp" | "call" | "email";
+
+/**
+ * Always-on floating contact button shown in the corner of the public card,
+ * following the visitor as they scroll. Targets fall back to the card's own
+ * contact details.
+ */
+export interface FloatingWidgetConfig {
+  /** Whether the floating button is shown. */
+  enabled?: boolean;
+  /** Which quick actions the button expands to. Defaults to whatsapp + call. */
+  actions?: FloatingAction[];
+  /** Optional greeting shown in a small bubble, e.g. "Chat with us". */
+  label?: string;
+  /** When true, the greeting bubble auto-loops (shows ~3s, hides ~3s, repeat)
+   *  to draw attention, until the visitor dismisses it. */
+  bubbleLoop?: boolean;
+}
+
 /** Lead-capture "Enquiry" form shown on the public card. */
 export interface EnquiryConfig {
   /** Whether the enquiry form section is shown. */
@@ -252,6 +307,12 @@ export interface CardData {
   booking?: BookingConfig;
   /** Email-signature design + per-field overrides (see src/lib/signature.ts). */
   signature?: SignatureConfig;
+  /** Always-on floating quick-contact button (WhatsApp / call / email). */
+  floatingWidget?: FloatingWidgetConfig;
+  /** Extra languages the public card can be viewed in, besides base English. */
+  languages?: LangCode[];
+  /** AI-generated translations of the card text, keyed by language code. */
+  translations?: Record<string, CardTranslation>;
   sectionsOrder?: string[];
   /** Per-section display style, e.g. { testimonials: "carousel-auto" }. */
   sectionStyles?: Record<string, string>;

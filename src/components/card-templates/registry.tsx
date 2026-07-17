@@ -1,7 +1,8 @@
-import { Eye } from "lucide-react";
 import type { CardData, LayoutId } from "@/types/card";
 import { getTemplate, templates } from "@/data/templates";
+import { availableLanguages } from "@/lib/i18n";
 import { CardNav } from "@/components/card/CardNav";
+import { FloatingContact } from "@/components/card/FloatingContact";
 import { CardFooter } from "@/components/card/CardFooter";
 import type { LayoutProps } from "./layouts/shared";
 import { CoverLayout } from "./layouts/CoverLayout";
@@ -90,6 +91,9 @@ export function CardRenderer({
   // wiring here.
   const showNav = !templateId && card.showNav !== false;
   const showFooter = !templateId && card.showFooter !== false;
+  // Extra published languages surface a switcher in the nav, so the nav bar must
+  // render even when the menu and view counter are both switched off.
+  const hasLanguages = !templateId && availableLanguages(card).length > 1;
   return (
     <div
       className={`theme-light relative mx-auto flex w-full max-w-[430px] flex-col overflow-x-hidden ${
@@ -97,7 +101,7 @@ export function CardRenderer({
       }`}
       style={zoom === 1 ? undefined : { zoom }}
     >
-      {(showNav || showViews) && (
+      {(showNav || showViews || hasLanguages) && (
         <CardNav
           card={card}
           accent={accent}
@@ -107,10 +111,18 @@ export function CardRenderer({
           badgeBg={badgeBg}
         />
       )}
-      <div className={showNav || showViews ? "[&>div]:!rounded-t-none [&>div>div:first-child]:!rounded-t-none" : ""}>
+      <div className={showNav || showViews || hasLanguages ? "[&>div]:!rounded-t-none [&>div>div:first-child]:!rounded-t-none" : ""}>
         <Layout card={card} accent={accent} style={meta.style} />
       </div>
       {showFooter && <CardFooter card={card} accent={accent} />}
+      {/* Always-on floating contact button. Its `position: fixed` is pinned to
+          the viewport on the live card, and to the phone frame in previews
+          (the frame's translateZ(0) screen makes it the fixed containing block),
+          so it stays glued to the bottom-right in both. Hidden in gallery
+          template thumbnails (forced templateId). */}
+      {!templateId && card.floatingWidget?.enabled && (
+        <FloatingContact card={card} accent={accent} />
+      )}
     </div>
   );
 }

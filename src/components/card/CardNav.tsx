@@ -5,7 +5,9 @@ import { Menu, X, Eye } from "lucide-react";
 import type { CardData } from "@/types/card";
 import { effectiveSectionLayout } from "@/lib/section-layouts";
 import { navSections, sectionAnchorId } from "@/lib/section-nav";
+import { availableLanguages } from "@/lib/i18n";
 import { SocialsRow } from "./sections";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 function initials(name: string) {
   return name
@@ -56,7 +58,9 @@ export function CardNav({
   }, [open]);
 
   const hasMenu = showNav && items.length >= 2;
-  if (!hasMenu && !showViews) return null;
+  // A language dropdown appears whenever the owner has published extra languages.
+  const hasLanguages = availableLanguages(card).length > 1;
+  if (!hasMenu && !showViews && !hasLanguages) return null;
 
   const variant = effectiveSectionLayout(card.sectionLayouts, "nav");
   const isFixed = card.navFixed !== false;
@@ -99,18 +103,21 @@ export function CardNav({
           )}
         </div>
 
-        {showViews && (
-          <div
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold tracking-wide"
-            style={{ 
-              backgroundColor: `${accent}15`, 
-              color: accent 
-            }}
-          >
-            <Eye className="h-4 w-4" />
-            {views.toLocaleString()}
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher card={card} accent={accent} />
+          {showViews && (
+            <div
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold tracking-wide"
+              style={{
+                backgroundColor: `${accent}15`,
+                color: accent
+              }}
+            >
+              <Eye className="h-4 w-4" />
+              {views.toLocaleString()}
+            </div>
+          )}
+        </div>
       </div>
 
       {open && hasMenu && (

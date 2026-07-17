@@ -10,8 +10,8 @@ const signaturePros = [
 
 export function EmailSignatureFeature() {
   return (
-    <Section id="email-signature">
-      <div className="relative mx-auto mt-16 grid max-w-5xl items-center gap-12 md:grid-cols-2 md:gap-8">
+    <Section id="email-signature" className="py-[60px]">
+      <div className="relative mx-auto grid max-w-5xl items-center gap-12 md:grid-cols-2 md:gap-8">
         
         {/* ---------- Left side text ---------- */}
         <div className="flex flex-col justify-center">

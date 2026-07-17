@@ -11,6 +11,7 @@ import {
   Inbox,
   LayoutTemplate,
   Mail,
+  QrCode,
   ExternalLink,
   LogOut,
   ArrowLeft,
@@ -62,6 +63,7 @@ export function DashboardShell({
     { href: "/dashboard/leads", label: "Leads", short: "Leads", icon: Inbox, badge: unreadLeads },
     { href: "/dashboard/templates", label: "Change Template", short: "Design", icon: LayoutTemplate },
     { href: "/dashboard/signature", label: "Mail Signature", short: "Signature", icon: Mail },
+    { href: "/dashboard/qr", label: "QR Code", short: "QR", icon: QrCode },
   ];
 
   const isActive = (item: NavItem) => {

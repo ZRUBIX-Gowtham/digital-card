@@ -7,8 +7,10 @@ import { getCardFromStore, incrementCardViews } from "@/lib/cards-store";
 import { logEvent, metaFromHeaders } from "@/lib/analytics-store";
 import { CardRenderer } from "@/components/card-templates/registry";
 import { CardIntro } from "@/components/card/CardIntro";
+import { applyTranslation, availableLanguages } from "@/lib/i18n";
 import { getTemplate, templates } from "@/data/templates";
 import { siteConfig } from "@/lib/site";
+import type { LangCode } from "@/types/card";
 
 // Cards are editable at runtime (file store), so render on demand rather than
 // baking the seed data in at build time.
@@ -46,8 +48,10 @@ export async function generateMetadata({
 
 export default async function UsernameCardPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{ lang?: string }>;
 }) {
   const { username } = await params;
   if (RESERVED.has(username)) notFound();
@@ -75,6 +79,16 @@ export default async function UsernameCardPage({
   const meta = getTemplate(card.templateId) ?? templates[0];
   const accent = card.accent ?? meta.style.accent;
 
+  // Resolve the display language from ?lang= against the languages the owner
+  // enabled, then overlay the matching AI translation. Anything unknown falls
+  // back to the base English card.
+  const langs = availableLanguages(card);
+  const { lang } = await searchParams;
+  const activeLang: LangCode = (lang && langs.includes(lang as LangCode)
+    ? lang
+    : "en") as LangCode;
+  const displayCard = { ...applyTranslation(card, activeLang), views };
+
   return (
     <main
       className={`min-h-screen py-0  ${darkCard ? "card-dark bg-black" : "bg-slate-50"
@@ -82,7 +96,7 @@ export default async function UsernameCardPage({
     >
       <CardIntro card={card} accent={accent} />
       <div className="mx-auto w-full max-w-[430px]">
-        <CardRenderer card={{ ...card, views }} />
+        <CardRenderer card={displayCard} />
       </div>
       <div className="mx-auto mt-8 w-full max-w-[430px] px-6 text-center pb-6">
         <Link

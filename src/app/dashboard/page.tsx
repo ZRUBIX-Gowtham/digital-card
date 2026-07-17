@@ -70,20 +70,20 @@ export default async function DashboardPage() {
                         Signed in as {user.email}
                       </p>
                     </div>
-                    <div className="flex w-full flex-col sm:w-auto sm:flex-row items-stretch gap-2.5">
+                    <div className="flex w-full shrink-0 flex-col sm:w-auto sm:flex-row items-stretch gap-2.5">
                       <Link
                         href="/dashboard/edit?tab=content"
-                        className="flex w-full sm:inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-2 whitespace-nowrap rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
                       >
-                        <Pencil className="h-4 w-4" /> Edit card
+                        <Pencil className="h-4 w-4 shrink-0" /> Edit card
                       </Link>
                       <a
                         href={`/${card.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex w-full sm:inline-flex items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-hover"
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-2 whitespace-nowrap rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-hover"
                       >
-                        <ExternalLink className="h-4 w-4" /> View live
+                        <ExternalLink className="h-4 w-4 shrink-0" /> View live
                       </a>
                     </div>
                   </div>

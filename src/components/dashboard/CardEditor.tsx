@@ -45,6 +45,10 @@ import type {
   CallToAction,
   EnquiryConfig,
   BookingConfig,
+  FloatingWidgetConfig,
+  FloatingAction,
+  CardTranslation,
+  LangCode,
 } from "@/types/card";
 import { getTemplate } from "@/data/templates";
 import {
@@ -82,7 +86,16 @@ import { IntroPreview } from "@/components/dashboard/IntroPreview";
 import { PhoneFrame } from "@/components/card/PhoneFrame";
 import { Container } from "@/components/ui/Container";
 import { saveCardAction } from "@/app/dashboard/edit/actions";
-import { generateProfileFromPrompt, improveTextWithAI } from "@/app/actions/ai-actions";
+import { generateProfileFromPrompt, improveTextWithAI, translateCardContent } from "@/app/actions/ai-actions";
+import {
+  LANGUAGES,
+  TRANSLATABLE_LANGUAGES,
+  collectTranslatable,
+  applyTranslation,
+  availableLanguages,
+  languageMeta,
+  translationFieldGroups,
+} from "@/lib/i18n";
 
 /**
  * Coordinates the collapsible editor panels so at most two are open at once
@@ -114,6 +127,17 @@ const FONT_SIZES: { id: NonNullable<CardData["fontScale"]>; label: string }[] = 
   { id: "sm", label: "Small" },
   { id: "md", label: "Medium" },
   { id: "lg", label: "Large" },
+];
+
+/** Quick actions the floating contact button can offer. */
+const FLOATING_ACTIONS: {
+  id: FloatingAction;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  { id: "whatsapp", label: "WhatsApp", icon: Icons.MessageCircle },
+  { id: "call", label: "Call", icon: Icons.Phone },
+  { id: "email", label: "Email", icon: Icons.Mail },
 ];
 
 /** Loading-splash designs shown when a visitor first opens the public card. */
@@ -325,6 +349,8 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
   const [introPreview, setIntroPreview] = useState<
     NonNullable<CardData["introStyle"]> | null
   >(null);
+  // Language the live preview is rendered in (base English by default).
+  const [previewLang, setPreviewLang] = useState<LangCode>("en");
 
   // Accordion: ids of the currently-expanded panels (oldest first, capped at
   // MAX_OPEN_PANELS). Opening one past the cap collapses the oldest.
@@ -476,6 +502,79 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
     setIsAiLoading(null);
   }
 
+  function setFloating<K extends keyof FloatingWidgetConfig>(
+    key: K,
+    value: FloatingWidgetConfig[K],
+  ) {
+    setCard((c) => ({
+      ...c,
+      floatingWidget: { ...(c.floatingWidget ?? {}), [key]: value },
+    }));
+    setStatus(null);
+  }
+
+  /** Update one language's translation immutably. */
+  function updateTranslation(
+    lang: LangCode,
+    next: CardTranslation,
+  ) {
+    setCard((c) => ({
+      ...c,
+      translations: { ...(c.translations ?? {}), [lang]: next },
+    }));
+    setStatus(null);
+  }
+
+  /** Toggle which quick action the floating button offers. */
+  function toggleFloatingAction(action: FloatingAction) {
+    setCard((c) => {
+      const current = c.floatingWidget?.actions ?? ["whatsapp", "call"];
+      const next = current.includes(action)
+        ? current.filter((a) => a !== action)
+        : [...current, action];
+      return { ...c, floatingWidget: { ...(c.floatingWidget ?? {}), actions: next } };
+    });
+    setStatus(null);
+  }
+
+  /** Enable/disable an extra language for the public card. */
+  function toggleLanguage(code: LangCode) {
+    setCard((c) => {
+      const current = c.languages ?? [];
+      const next = current.includes(code)
+        ? current.filter((l) => l !== code)
+        : [...current, code];
+      return { ...c, languages: next };
+    });
+    setStatus(null);
+  }
+
+  /** Translate the card's text into every enabled language via Gemini. */
+  async function handleGenerateTranslations() {
+    const targets = (card.languages ?? []).filter((l) => l !== "en");
+    if (targets.length === 0) {
+      setStatus({ ok: false, msg: "Pick at least one language first." });
+      return;
+    }
+    setIsAiLoading("translate");
+    const payload = JSON.stringify(collectTranslatable(card));
+    const next: Record<string, CardTranslation> = { ...(card.translations ?? {}) };
+    let failed = 0;
+    for (const code of targets) {
+      const langName = LANGUAGES.find((l) => l.code === code)?.name ?? code;
+      const res = await translateCardContent(payload, langName);
+      if (res.ok && res.data) next[code] = res.data as CardTranslation;
+      else failed++;
+    }
+    setCard((c) => ({ ...c, translations: next }));
+    setIsAiLoading(null);
+    setStatus(
+      failed === 0
+        ? { ok: true, msg: "Translations ready! Hit Save to publish." }
+        : { ok: false, msg: `${failed} language(s) failed — try again.` },
+    );
+  }
+
   /** Restore layout, colour and text size to what this card started with. */
   function resetDesign() {
     setCard((c) => ({
@@ -523,6 +622,14 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
 
   const currentTemplate = getTemplate(card.templateId);
   const accent = card.accent ?? currentTemplate?.style.accent ?? "#4f46e5";
+
+  // Languages available to preview (base + any with a generated translation),
+  // and the card rendered into the currently selected preview language.
+  const previewLangs = availableLanguages(card);
+  const effectivePreviewLang = previewLangs.includes(previewLang)
+    ? previewLang
+    : "en";
+  const previewCard = applyTranslation(card, effectivePreviewLang);
 
   const activeSectionsOrder = card.sectionsOrder !== undefined && card.sectionsOrder !== null
     ? card.sectionsOrder
@@ -865,6 +972,68 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
                         );
                       })}
                     </div>
+                  </Panel>
+
+                  {/* Floating contact button */}
+                  <Panel
+                    title="Floating contact button"
+                    desc="An always-visible button in the corner of your card that visitors can tap to reach you instantly."
+                  >
+                    <Toggle
+                      label="Show floating button"
+                      hint="Follows the visitor as they scroll your card."
+                      checked={card.floatingWidget?.enabled === true}
+                      onChange={(v) => setFloating("enabled", v)}
+                    />
+                    {card.floatingWidget?.enabled && (
+                      <div className="mt-4 space-y-4 border-t border-border pt-4">
+                        <div>
+                          <p className="mb-2 text-sm font-medium text-foreground">
+                            Quick actions
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {FLOATING_ACTIONS.map((a) => {
+                              const list =
+                                card.floatingWidget?.actions ?? ["whatsapp", "call"];
+                              const active = list.includes(a.id);
+                              return (
+                                <button
+                                  key={a.id}
+                                  type="button"
+                                  onClick={() => toggleFloatingAction(a.id)}
+                                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors cursor-pointer ${
+                                    active
+                                      ? "border-brand bg-brand/10 text-brand"
+                                      : "border-border text-muted hover:text-foreground"
+                                  }`}
+                                >
+                                  <a.icon className="h-4 w-4" />
+                                  {a.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <p className="mt-2 text-xs text-muted">
+                            Uses your saved contact details. Actions without a
+                            number/email are skipped automatically.
+                          </p>
+                        </div>
+                        <Text
+                          label="Greeting bubble (optional)"
+                          value={card.floatingWidget?.label ?? ""}
+                          onChange={(v) => setFloating("label", v)}
+                          placeholder="e.g. Chat with us"
+                        />
+                        {card.floatingWidget?.label?.trim() && (
+                          <Toggle
+                            label="Auto show & hide (loop)"
+                            hint="The bubble fades in and out every few seconds to catch attention. Visitors can dismiss it with the ✕."
+                            checked={card.floatingWidget?.bubbleLoop === true}
+                            onChange={(v) => setFloating("bubbleLoop", v)}
+                          />
+                        )}
+                      </div>
+                    )}
                   </Panel>
 
                   {/* Reset to defaults */}
@@ -1822,6 +1991,82 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
                       ),
                     });
                   })}
+
+                  {/* Languages — AI-translated versions of the card */}
+                  <Panel
+                    collapsible
+                    icon={Icons.Languages}
+                    title="Languages"
+                    desc="Let visitors read your card in Tamil or Hindi. AI translates your content; you save to publish."
+                  >
+                    <div className="space-y-2">
+                      {TRANSLATABLE_LANGUAGES.map((l) => {
+                        const enabled = (card.languages ?? []).includes(l.code);
+                        const hasTranslation = Boolean(card.translations?.[l.code]);
+                        return (
+                          <div
+                            key={l.code}
+                            className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-2/40 px-4 py-3"
+                          >
+                            <span className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-foreground">
+                                {l.native}
+                              </span>
+                              {enabled && hasTranslation && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                                  <Check className="h-3 w-3" /> Translated
+                                </span>
+                              )}
+                            </span>
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={enabled}
+                              aria-label={l.native}
+                              onClick={() => toggleLanguage(l.code)}
+                              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${enabled ? "bg-brand" : "bg-slate-300"}`}
+                            >
+                              <span
+                                className={`inline-block h-5 w-5 transform rounded-full bg-surface shadow transition-transform ${enabled ? "translate-x-5" : "translate-x-0.5"}`}
+                              />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleGenerateTranslations}
+                      disabled={
+                        isAiLoading === "translate" ||
+                        (card.languages ?? []).filter((l) => l !== "en").length === 0
+                      }
+                      className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand bg-brand/5 px-4 py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-brand/10 disabled:opacity-50 cursor-pointer"
+                    >
+                      <Icons.Sparkles className="h-4 w-4" />
+                      {isAiLoading === "translate"
+                        ? "Translating…"
+                        : "Generate translations with AI"}
+                    </button>
+                    <p className="text-xs text-muted">
+                      Re-run this after you edit your content so the translations
+                      stay in sync. Names, numbers and links are never changed.
+                    </p>
+
+                    {/* Manual edit — tweak any AI translation per language */}
+                    {(card.languages ?? [])
+                      .filter((l) => l !== "en" && card.translations?.[l])
+                      .map((code) => (
+                        <TranslationEditor
+                          key={code}
+                          lang={code}
+                          card={card}
+                          value={card.translations?.[code] ?? {}}
+                          onChange={(next) => updateTranslation(code, next)}
+                        />
+                      ))}
+                  </Panel>
                 </div>
               )}
             </div>
@@ -1829,20 +2074,22 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
 
           {/* ---------------- Live preview (desktop only) ---------------- */}
           <div className="hidden lg:sticky lg:top-[90px] lg:self-start lg:flex flex-col items-center gap-4 w-full shrink-0 h-[calc(100vh-120px)]">
-            {/* Header: label + primary actions */}
-            <div className="flex w-full shrink-0 items-center justify-between gap-3">
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted">
+            {/* Header: label (left) · language dropdown (centred) · Save (right) */}
+            <div className="grid w-full shrink-0 grid-cols-3 items-center gap-3">
+              <span className="inline-flex items-center gap-1.5 justify-self-start text-xs font-semibold uppercase tracking-wider text-muted">
                 <Icons.Eye className="h-3.5 w-3.5" /> Live preview
               </span>
-              <div className="flex items-center gap-2">
-                <a
-                  href={`/${card.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-surface-hover"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" /> View live
-                </a>
+              <div className="justify-self-center">
+                {previewLangs.length > 1 && (
+                  <PreviewLangPicker
+                    languages={previewLangs}
+                    current={effectivePreviewLang}
+                    accent={accent}
+                    onChange={setPreviewLang}
+                  />
+                )}
+              </div>
+              <div className="flex items-center gap-2 justify-self-end">
                 <button
                   type="button"
                   onClick={save}
@@ -1862,7 +2109,7 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
                 screenClassName="min-h-0 flex-1 !p-0 scroll-smooth"
               >
                 <div className="h-full [&>div>div]:max-w-none [&>div>div]:overflow-visible [&>div>div]:rounded-none [&>div>div]:sm:rounded-none [&>div>div]:border-0 [&>div>div]:sm:border-0 [&>div>div]:shadow-none [&>div>div]:sm:shadow-none [&>div>div]:min-h-0 [&>div>div]:sm:min-h-0 [&>div>div>div]:max-w-none [&>div>div>div]:overflow-visible [&>div>div>div]:rounded-none [&>div>div>div]:sm:rounded-none [&>div>div>div]:border-0 [&>div>div>div]:sm:border-0 [&>div>div>div]:shadow-none [&>div>div>div]:sm:shadow-none [&>div>div>div]:min-h-0 [&>div>div>div]:sm:min-h-0">
-                  <CardRenderer card={card} />
+                  <CardRenderer card={previewCard} />
                 </div>
               </PhoneFrame>
             </div>
@@ -1924,8 +2171,19 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
         {/* Mobile live-preview popup */}
         {previewOpen && (
           <div className="lg:hidden fixed inset-0 z-50 flex flex-col bg-black/70 backdrop-blur-sm">
-            <div className="flex shrink-0 items-center justify-between px-4 py-3">
-              <span className="text-sm font-semibold text-white">Live preview</span>
+            <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="text-sm font-semibold text-white">Live preview</span>
+                {previewLangs.length > 1 && (
+                  <PreviewLangPicker
+                    languages={previewLangs}
+                    current={effectivePreviewLang}
+                    accent={accent}
+                    onChange={setPreviewLang}
+                    dark
+                  />
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setPreviewOpen(false)}
@@ -1941,7 +2199,7 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
                 screenClassName="min-h-0 flex-1 !p-0"
               >
                 <div className="h-full [&>div>div]:max-w-none [&>div>div]:overflow-visible [&>div>div]:rounded-none [&>div>div]:sm:rounded-none [&>div>div]:border-0 [&>div>div]:sm:border-0 [&>div>div]:shadow-none [&>div>div]:sm:shadow-none [&>div>div]:min-h-0 [&>div>div]:sm:min-h-0 [&>div>div>div]:max-w-none [&>div>div>div]:overflow-visible [&>div>div>div]:rounded-none [&>div>div>div]:sm:rounded-none [&>div>div>div]:border-0 [&>div>div>div]:sm:border-0 [&>div>div>div]:shadow-none [&>div>div>div]:sm:shadow-none [&>div>div>div]:min-h-0 [&>div>div>div]:sm:min-h-0">
-                  <CardRenderer card={card} />
+                  <CardRenderer card={previewCard} />
                 </div>
               </PhoneFrame>
             </div>
@@ -3126,6 +3384,182 @@ function ShopEditor({
 
 const fieldCls =
   "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-ring";
+
+/** Language dropdown for the editor's live-preview header. */
+function PreviewLangPicker({
+  languages,
+  current,
+  accent,
+  onChange,
+  dark = false,
+}: {
+  languages: LangCode[];
+  current: LangCode;
+  accent: string;
+  onChange: (l: LangCode) => void;
+  dark?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const currentMeta = languageMeta(current);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Preview language"
+        aria-expanded={open}
+        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+          dark
+            ? "border-white/15 bg-white/10 text-white hover:bg-white/15"
+            : "border-border bg-surface text-foreground hover:bg-surface-hover"
+        }`}
+      >
+        <Icons.Languages className="h-3.5 w-3.5" style={{ color: accent }} />
+        <span>{currentMeta?.native ?? current}</span>
+        <Icons.ChevronDown
+          className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div
+          className="absolute left-0 top-full z-[120] mt-2 min-w-[140px] overflow-hidden rounded-xl border border-border bg-surface py-1 shadow-xl animate-fade-in"
+          role="menu"
+        >
+          {languages.map((code) => {
+            const meta = languageMeta(code);
+            const active = code === current;
+            return (
+              <button
+                key={code}
+                type="button"
+                role="menuitemradio"
+                aria-checked={active}
+                onClick={() => {
+                  onChange(code);
+                  setOpen(false);
+                }}
+                className="flex w-full items-center justify-between gap-3 px-3.5 py-2 text-left text-sm font-semibold text-foreground transition-colors hover:bg-surface-2"
+              >
+                <span>{meta?.native ?? code}</span>
+                {active && (
+                  <Check className="h-4 w-4 shrink-0" style={{ color: accent }} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Manual editor for one language's AI translation. Renders every translatable
+ * field the card uses (grouped by section) with the base English text as a
+ * reference, so the owner can fine-tune anything the AI produced. Collapsible to
+ * keep the panel tidy when several languages are enabled.
+ */
+function TranslationEditor({
+  lang,
+  card,
+  value,
+  onChange,
+}: {
+  lang: LangCode;
+  card: CardData;
+  value: CardTranslation;
+  onChange: (next: CardTranslation) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const meta = languageMeta(lang);
+  const groups = translationFieldGroups(card, value);
+  const total = groups.reduce((n, g) => n + g.fields.length, 0);
+
+  return (
+    <div className="mt-3 overflow-hidden rounded-xl border border-border">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 bg-surface-2/50 px-4 py-3 text-left cursor-pointer"
+      >
+        <ChevronRight
+          className={`h-4 w-4 shrink-0 text-muted transition-transform ${open ? "rotate-90" : ""}`}
+        />
+        <Icons.Pencil className="h-4 w-4 shrink-0 text-brand" />
+        <span className="flex-1 text-sm font-semibold text-foreground">
+          Edit {meta?.native ?? lang} translation
+        </span>
+        <span className="text-xs text-muted">{total} fields</span>
+      </button>
+
+      {open && (
+        <div className="space-y-5 border-t border-border p-4">
+          {groups.length === 0 && (
+            <p className="text-xs text-muted">
+              Nothing to translate yet — add some content first.
+            </p>
+          )}
+          {groups.map((group) => (
+            <div key={group.title} className="space-y-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted">
+                {group.title}
+              </p>
+              {group.fields.map((field) => (
+                <label key={field.key} className="block">
+                  <span className="mb-1 block text-xs font-medium text-foreground">
+                    {field.label}
+                  </span>
+                  {field.base && (
+                    <span className="mb-1.5 block text-[11px] leading-snug text-muted">
+                      EN: {field.base}
+                    </span>
+                  )}
+                  {field.multiline ? (
+                    <textarea
+                      rows={3}
+                      value={field.value ?? ""}
+                      placeholder={field.base}
+                      onChange={(e) => onChange(field.set(e.target.value))}
+                      className={fieldCls}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={field.value ?? ""}
+                      placeholder={field.base}
+                      onChange={(e) => onChange(field.set(e.target.value))}
+                      className={fieldCls}
+                    />
+                  )}
+                </label>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function Text({
   label,
