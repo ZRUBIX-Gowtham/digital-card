@@ -51,7 +51,7 @@ export const plans: Plan[] = [
       "Central branding controls",
       "Lead capture & export",
       "Priority support",
-      "Remove digitalsite badge",
+      "Remove OnlineCard badge",
     ],
   },
 ];

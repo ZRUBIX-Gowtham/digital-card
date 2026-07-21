@@ -23,9 +23,9 @@ export function WhatIsDigitalSite() {
   return (
     <Section id="what-is-digital-site" className="bg-brand-50/50 dark:bg-brand-900/10">
       <SectionHeading
-        eyebrow="What is Digital Site?"
+        eyebrow="What is OnlineCard?"
         title="Your entire professional life, in one smart link."
-        description="We are replacing the traditional paper business card with a powerful, interactive profile. Digital Site lets you build a personal landing page in minutes, making it easier for clients to save your number, view your work, and pay you directly."
+        description="We are replacing the traditional paper business card with a powerful, interactive profile. OnlineCard lets you build a personal landing page in minutes, making it easier for clients to save your number, view your work, and pay you directly."
       />
       
       <div className="mt-16 grid gap-8 md:grid-cols-3">

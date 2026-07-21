@@ -45,7 +45,7 @@ export function QrShare({ slug, accent }: { slug: string; accent: string }) {
         <button
           type="button"
           onClick={() => setShowQr((v) => !v)}
-          className="flex flex-col items-center gap-1 rounded-xl border border-border bg-white px-2 py-3 text-xs font-semibold text-foreground transition-colors hover:bg-surface"
+          className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border border-border bg-white px-2 py-3 text-xs font-semibold text-foreground transition-colors hover:bg-surface"
         >
           <QrCode className="h-5 w-5" style={{ color: accent }} />
           QR
@@ -53,7 +53,7 @@ export function QrShare({ slug, accent }: { slug: string; accent: string }) {
         <button
           type="button"
           onClick={copyLink}
-          className="flex flex-col items-center gap-1 rounded-xl border border-border bg-white px-2 py-3 text-xs font-semibold text-foreground transition-colors hover:bg-surface"
+          className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border border-border bg-white px-2 py-3 text-xs font-semibold text-foreground transition-colors hover:bg-surface"
         >
           {copied ? (
             <Check className="h-5 w-5 text-emerald-600" />
@@ -65,7 +65,7 @@ export function QrShare({ slug, accent }: { slug: string; accent: string }) {
         <button
           type="button"
           onClick={share}
-          className="flex flex-col items-center gap-1 rounded-xl border border-border bg-white px-2 py-3 text-xs font-semibold text-foreground transition-colors hover:bg-surface"
+          className="flex cursor-pointer flex-col items-center gap-1 rounded-xl border border-border bg-white px-2 py-3 text-xs font-semibold text-foreground transition-colors hover:bg-surface"
         >
           <Share2 className="h-5 w-5" style={{ color: accent }} />
           Share
@@ -82,7 +82,7 @@ export function QrShare({ slug, accent }: { slug: string; accent: string }) {
             href={`https://wa.me/?text=${encodeURIComponent(url)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm font-semibold"
+            className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold"
             style={{ color: accent }}
           >
             <MessageCircle className="h-4 w-4" />

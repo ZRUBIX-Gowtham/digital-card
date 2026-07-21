@@ -82,6 +82,7 @@ import { FooterBody } from "@/components/card/CardFooter";
 import { HeaderBody } from "@/components/card/CardHeader";
 import { NavPreviewBody } from "@/components/card/CardNav";
 import { CardRenderer } from "@/components/card-templates/registry";
+import { PreviewLangProvider } from "@/components/card/PreviewLangContext";
 import { IntroPreview } from "@/components/dashboard/IntroPreview";
 import { PhoneFrame } from "@/components/card/PhoneFrame";
 import { Container } from "@/components/ui/Container";
@@ -630,6 +631,12 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
     ? previewLang
     : "en";
   const previewCard = applyTranslation(card, effectivePreviewLang);
+  // Lets the in-card language switcher (rendered inside the phone) drive the
+  // preview language instead of a URL navigation it can't perform here.
+  const previewLangControl = useMemo(
+    () => ({ current: effectivePreviewLang, onChange: setPreviewLang }),
+    [effectivePreviewLang],
+  );
 
   const activeSectionsOrder = card.sectionsOrder !== undefined && card.sectionsOrder !== null
     ? card.sectionsOrder
@@ -2108,8 +2115,13 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
                 className="h-full w-[285px] max-h-[720px] max-w-full shadow-xl"
                 screenClassName="min-h-0 flex-1 !p-0 scroll-smooth"
               >
-                <div className="h-full [&>div>div]:max-w-none [&>div>div]:overflow-visible [&>div>div]:rounded-none [&>div>div]:sm:rounded-none [&>div>div]:border-0 [&>div>div]:sm:border-0 [&>div>div]:shadow-none [&>div>div]:sm:shadow-none [&>div>div]:min-h-0 [&>div>div]:sm:min-h-0 [&>div>div>div]:max-w-none [&>div>div>div]:overflow-visible [&>div>div>div]:rounded-none [&>div>div>div]:sm:rounded-none [&>div>div>div]:border-0 [&>div>div>div]:sm:border-0 [&>div>div>div]:shadow-none [&>div>div>div]:sm:shadow-none [&>div>div>div]:min-h-0 [&>div>div>div]:sm:min-h-0">
-                  <CardRenderer card={previewCard} />
+                <div
+                  className="[&>div>div]:max-w-none [&>div>div]:overflow-visible [&>div>div]:rounded-none [&>div>div]:sm:rounded-none [&>div>div]:border-0 [&>div>div]:sm:border-0 [&>div>div]:shadow-none [&>div>div]:sm:shadow-none [&>div>div]:min-h-0 [&>div>div]:sm:min-h-0 [&>div>div>div]:max-w-none [&>div>div>div]:overflow-visible [&>div>div>div]:rounded-none [&>div>div>div]:sm:rounded-none [&>div>div>div]:border-0 [&>div>div>div]:sm:border-0 [&>div>div>div]:shadow-none [&>div>div>div]:sm:shadow-none [&>div>div>div]:min-h-0 [&>div>div>div]:sm:min-h-0"
+                  style={{ width: 360, zoom: 0.736, minHeight: "136%" }}
+                >
+                  <PreviewLangProvider value={previewLangControl}>
+                    <CardRenderer card={previewCard} />
+                  </PreviewLangProvider>
                 </div>
               </PhoneFrame>
             </div>
@@ -2198,8 +2210,13 @@ export function CardEditor({ initialCard }: { initialCard: CardData }) {
                 className="h-[75vh] w-[280px] max-h-full max-w-full shadow-2xl"
                 screenClassName="min-h-0 flex-1 !p-0"
               >
-                <div className="h-full [&>div>div]:max-w-none [&>div>div]:overflow-visible [&>div>div]:rounded-none [&>div>div]:sm:rounded-none [&>div>div]:border-0 [&>div>div]:sm:border-0 [&>div>div]:shadow-none [&>div>div]:sm:shadow-none [&>div>div]:min-h-0 [&>div>div]:sm:min-h-0 [&>div>div>div]:max-w-none [&>div>div>div]:overflow-visible [&>div>div>div]:rounded-none [&>div>div>div]:sm:rounded-none [&>div>div>div]:border-0 [&>div>div>div]:sm:border-0 [&>div>div>div]:shadow-none [&>div>div>div]:sm:shadow-none [&>div>div>div]:min-h-0 [&>div>div>div]:sm:min-h-0">
-                  <CardRenderer card={previewCard} />
+                <div
+                  className="[&>div>div]:max-w-none [&>div>div]:overflow-visible [&>div>div]:rounded-none [&>div>div]:sm:rounded-none [&>div>div]:border-0 [&>div>div]:sm:border-0 [&>div>div]:shadow-none [&>div>div]:sm:shadow-none [&>div>div]:min-h-0 [&>div>div]:sm:min-h-0 [&>div>div>div]:max-w-none [&>div>div>div]:overflow-visible [&>div>div>div]:rounded-none [&>div>div>div]:sm:rounded-none [&>div>div>div]:border-0 [&>div>div>div]:sm:border-0 [&>div>div>div]:shadow-none [&>div>div>div]:sm:shadow-none [&>div>div>div]:min-h-0 [&>div>div>div]:sm:min-h-0"
+                  style={{ width: 360, zoom: 0.722, minHeight: "139%" }}
+                >
+                  <PreviewLangProvider value={previewLangControl}>
+                    <CardRenderer card={previewCard} />
+                  </PreviewLangProvider>
                 </div>
               </PhoneFrame>
             </div>

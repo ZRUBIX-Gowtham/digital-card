@@ -5,7 +5,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ============================================================
-   digitalsite Digital Card — Clean corporate / minimal design system
+   OnlineCard — Clean corporate / minimal design system
    ============================================================ */
 
 :root {
@@ -18,7 +18,7 @@
   --muted: #64748b;        /* slate-500 */
   --border: #e6e9f0;       /* very light hairline */
 
-  /* Brand — digitalsite indigo/blue */
+  /* Brand — OnlineCard indigo/blue */
   --brand: #4f46e5;        /* indigo-600 */
   --brand-600: #4f46e5;
   --brand-700: #4338ca;
@@ -49,6 +49,32 @@
   --brand-100: #e0e7ff;
   --accent: #0ea5e9;
   --ring: #c7d2fe;
+}
+
+/* Give every interactive control inside a card a pointer cursor. `.theme-light`
+   is on the card root (live card + editor preview), so this never touches the
+   app chrome. `:where()` keeps specificity at 0 so any component's own
+   `cursor-*` utility (e.g. `disabled:cursor-not-allowed`) still wins, and
+   `:not(:disabled)` leaves disabled controls with the default cursor. */
+.theme-light
+  :where(
+    button,
+    a[href],
+    label[for],
+    summary,
+    select,
+    [role="button"],
+    [role="tab"],
+    [role="menuitem"],
+    [role="menuitemradio"],
+    [role="option"],
+    input[type="checkbox"],
+    input[type="radio"],
+    input[type="submit"],
+    input[type="button"],
+    input[type="file"]
+  ):not(:disabled) {
+  cursor: pointer;
 }
 
 /* ---- Dark theme (pure black) — applied when <html class="dark"> ---- */

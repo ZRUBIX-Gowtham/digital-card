@@ -5,7 +5,7 @@ export function Logo({ light = false }: { light?: boolean }) {
     <Link href="/" className="inline-flex items-center gap-2">
       <img
         src="/logo.png"
-        alt="Digital Site logo"
+        alt="OnlineCard logo"
         width={32}
         height={32}
         className="h-8 w-8 rounded-lg"
@@ -13,8 +13,8 @@ export function Logo({ light = false }: { light?: boolean }) {
       <span
         className={`text-lg font-bold tracking-tight ${light ? "text-white" : "text-foreground"}`}
       >
-        Digital
-        <span className="text-brand"> Site</span>
+        Online
+        <span className="text-brand">Card</span>
       </span>
     </Link>
   );

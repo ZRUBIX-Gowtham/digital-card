@@ -9,7 +9,7 @@ import { siteConfig } from "@/lib/site";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "Why we built Digital Site — a faster, greener, more memorable way to share who you are and what you do with a free digital business card.",
+    "Why we built OnlineCard — a faster, greener, more memorable way to share who you are and what you do with a free digital business card.",
   alternates: { canonical: "/about" },
 };
 

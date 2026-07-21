@@ -9,6 +9,7 @@ import {
 import { Languages, Check, ChevronDown } from "lucide-react";
 import type { CardData, LangCode } from "@/types/card";
 import { availableLanguages, languageMeta } from "@/lib/i18n";
+import { usePreviewLang } from "./PreviewLangContext";
 
 /**
  * Language dropdown shown in the card's top nav (next to the views count).
@@ -31,6 +32,7 @@ export function LanguageSwitcher({
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  const preview = usePreviewLang();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -53,18 +55,26 @@ export function LanguageSwitcher({
 
   const languages = availableLanguages(card);
   if (languages.length < 2) return null;
-  // The dropdown drives a real navigation, which the dashboard preview can't act
-  // on — hide it there so the editor preview isn't misleading.
-  if (pathname.startsWith("/dashboard")) return null;
+  // On the public card the dropdown drives a real `?lang=` navigation. The
+  // dashboard preview can't navigate, so it supplies a control via context that
+  // switches the editor's `previewLang` instead. With neither, hide it.
+  if (!preview && pathname.startsWith("/dashboard")) return null;
 
   const raw = params.get("lang");
-  const current: LangCode =
-    raw && languages.includes(raw as LangCode) ? (raw as LangCode) : "en";
+  const current: LangCode = preview
+    ? preview.current
+    : raw && languages.includes(raw as LangCode)
+      ? (raw as LangCode)
+      : "en";
   const currentMeta = languageMeta(current);
 
   function switchTo(lang: LangCode) {
     setOpen(false);
     if (lang === current) return;
+    if (preview) {
+      preview.onChange(lang);
+      return;
+    }
     const next = new URLSearchParams(params);
     if (lang === "en") next.delete("lang");
     else next.set("lang", lang);

@@ -81,7 +81,7 @@ function Credit({ card, tone = "muted" }: { card: CardData; tone?: "muted" | "li
       <p className={`mt-4 text-[11px] ${sub}`}>
         © {year} {card.name}. All rights reserved.
       </p>
-      <p className={`mt-1 text-[10px] ${faint}`}>Powered by Digital Site</p>
+      <p className={`mt-1 text-[10px] ${faint}`}>Powered by OnlineCard</p>
     </>
   );
 }
@@ -124,7 +124,7 @@ export function FooterBody({
         <p className="mt-4 text-center text-[11px] text-muted">
           © {new Date().getFullYear()} {card.name}. All rights reserved.
         </p>
-        <p className="mt-1 text-center text-[10px] text-muted/70">Powered by Digital Site</p>
+        <p className="mt-1 text-center text-[10px] text-muted/70">Powered by OnlineCard</p>
       </footer>
     );
   }

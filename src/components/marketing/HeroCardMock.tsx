@@ -14,7 +14,7 @@ export function HeroCardMock() {
         </div>
         <div className="flex flex-1 items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-muted">
           <Lock className="h-3 w-3" />
-          <span className="truncate">digitalsite.io/aarav-mehta</span>
+          <span className="truncate">onlinecard.me/aarav-mehta</span>
         </div>
       </div>
 

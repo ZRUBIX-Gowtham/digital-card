@@ -7,7 +7,7 @@ import { PageHero } from "@/components/marketing/PageHero";
 export const metadata: Metadata = {
   title: "Pricing — Start Free",
   description:
-    "Simple, honest pricing for Digital Site digital business cards. Create your card free forever and upgrade for premium templates, payments and analytics when you need more.",
+    "Simple, honest pricing for OnlineCard digital business cards. Create your card free forever and upgrade for premium templates, payments and analytics when you need more.",
   alternates: { canonical: "/pricing" },
 };
 

@@ -4,7 +4,7 @@ import { CTA } from "@/components/marketing/CTA";
 import { PageHero } from "@/components/marketing/PageHero";
 
 export const metadata: Metadata = {
-  title: "Testimonials — Digital Site",
+  title: "Testimonials — OnlineCard",
   description: "See what professionals are saying about our free digital business cards.",
   alternates: { canonical: "/testimonials" },
 };
@@ -16,7 +16,7 @@ export default function TestimonialsPage() {
         badge="Testimonials"
         title="Trusted by"
         highlight="professionals"
-        description="Discover how people are using Digital Site to build their professional identity and connect with clients."
+        description="Discover how people are using OnlineCard to build their professional identity and connect with clients."
       />
       <Testimonials />
       <CTA />

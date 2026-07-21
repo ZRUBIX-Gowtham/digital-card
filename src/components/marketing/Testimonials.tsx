@@ -17,7 +17,7 @@ const testimonials = [
   },
   {
     quote:
-      "Our whole sales team is on digitalsite now. Consistent branding, and we can update roles without reprinting anything.",
+      "Our whole sales team is on OnlineCard now. Consistent branding, and we can update roles without reprinting anything.",
     name: "Rohan Verma",
     role: "Director of Sales",
   },

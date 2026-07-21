@@ -10,7 +10,7 @@ import { PageHero } from "@/components/marketing/PageHero";
 export const metadata: Metadata = {
   title: "Features — Free Digital Business Card & Website Builder",
   description:
-    "Everything Digital Site can do — QR sharing, ready-made templates, catalogues, payments and analytics. The easy, free way to build your own digital business card and website.",
+    "Everything OnlineCard can do — QR sharing, ready-made templates, catalogues, payments and analytics. The easy, free way to build your own digital business card and website.",
   alternates: { canonical: "/features" },
 };
 
@@ -21,7 +21,7 @@ export default function FeaturesPage() {
         badge="Features"
         title="A complete toolkit for your"
         highlight="professional identity"
-        description="From the first tap to a saved contact and a completed payment, Digital Site covers every part of how you connect."
+        description="From the first tap to a saved contact and a completed payment, OnlineCard covers every part of how you connect."
         backgroundImage="/images/features-hero-bg.png"
       />
       <Features />

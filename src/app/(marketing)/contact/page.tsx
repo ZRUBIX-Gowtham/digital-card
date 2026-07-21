@@ -8,7 +8,7 @@ import { siteConfig } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Get in touch with the Digital Site team. We usually reply within one business day.",
+    "Get in touch with the OnlineCard team. We usually reply within one business day.",
   alternates: { canonical: "/contact" },
 };
 

@@ -7,7 +7,7 @@ import { SignInForm } from "./SignInForm";
 
 export const metadata: Metadata = {
   title: "Sign in",
-  description: "Sign in to manage your digitalsite digital business card.",
+  description: "Sign in to manage your OnlineCard digital business card.",
 };
 
 export default async function SignInPage({
@@ -30,7 +30,7 @@ export default async function SignInPage({
         {username && (
           <div className="mb-4 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm text-brand">
             You&apos;re claiming{" "}
-            <span className="font-mono font-semibold">digitalsite.io/{username}</span>{" "}
+            <span className="font-mono font-semibold">onlinecard.me/{username}</span>{" "}
             — sign in to finish.
           </div>
         )}

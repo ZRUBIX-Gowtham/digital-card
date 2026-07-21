@@ -163,6 +163,18 @@ export interface SignatureConfig {
   photo?: string;
   /** Social handles keyed by platform, e.g. { linkedin: "..." }. */
   socials?: Record<string, string>;
+  /** Showcase/gallery images (URLs or data-URIs) shown as a thumbnail strip by
+   *  the Listings design, e.g. property photos or product shots. */
+  gallery?: string[];
+  /** Heading above the gallery strip, e.g. "Check out our latest listings". */
+  galleryHeading?: string;
+  /** Promo banner headline (Banner/Campaign designs), e.g. "Get 20% off". */
+  bannerText?: string;
+  /** Promo banner button label (Banner/Campaign designs), e.g. "More info". */
+  bannerButton?: string;
+  /** Promo banner background image (URL or data-URI) for the Banner/Campaign
+   *  designs, e.g. a decorative sale graphic. */
+  bannerImage?: string;
   /** Field keys the user removed from the signature, e.g. ["address"]. */
   hide?: string[];
 }

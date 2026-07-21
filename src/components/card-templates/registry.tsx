@@ -96,7 +96,7 @@ export function CardRenderer({
   const hasLanguages = !templateId && availableLanguages(card).length > 1;
   return (
     <div
-      className={`theme-light relative mx-auto flex w-full max-w-[430px] flex-col overflow-x-hidden ${
+      className={`theme-light relative mx-auto flex w-full max-w-[430px] flex-col overflow-x-clip ${
         darkCard ? " card-dark bg-surface" : "bg-white"
       }`}
       style={zoom === 1 ? undefined : { zoom }}

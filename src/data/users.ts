@@ -13,19 +13,19 @@ export interface DummyUser {
 
 export const users: DummyUser[] = [
   {
-    email: "demo@digitalsite.com",
+    email: "demo@onlinecard.me",
     password: "demo1234",
     name: "Aarav Mehta",
     cardSlug: "aarav-mehta",
   },
   {
-    email: "sara@digitalsite.com",
+    email: "sara@onlinecard.me",
     password: "demo1234",
     name: "Sara Khan",
     cardSlug: "sara-khan",
   },
   {
-    email: "kabir@digitalsite.com",
+    email: "kabir@onlinecard.me",
     password: "demo1234",
     name: "Kabir Nair",
     cardSlug: "pixel-forge",

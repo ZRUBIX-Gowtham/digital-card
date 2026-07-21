@@ -8,7 +8,7 @@ export function Features({ limit }: { limit?: number }) {
       <SectionHeading
         eyebrow="Everything you need"
         title="One card that does it all"
-        description="digitalsite Cards packs everything your contacts need to reach, remember and pay you — into a single, elegant link."
+        description="OnlineCard packs everything your contacts need to reach, remember and pay you — into a single, elegant link."
       />
       <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((f) => {

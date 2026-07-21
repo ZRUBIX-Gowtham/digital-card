@@ -171,7 +171,10 @@ export default async function DashboardPage() {
                     className="h-[520px] w-[268px] shadow-lg"
                     screenClassName="min-h-0 flex-1 !p-0"
                   >
-                    <div className="h-full [&>div>div]:max-w-none [&>div>div]:overflow-visible [&>div>div]:rounded-none [&>div>div]:sm:rounded-none [&>div>div]:border-0 [&>div>div]:sm:border-0 [&>div>div]:shadow-none [&>div>div]:sm:shadow-none [&>div>div]:min-h-0 [&>div>div]:sm:min-h-0">
+                    <div
+                      className="[&>div>div]:max-w-none [&>div>div]:overflow-visible [&>div>div]:rounded-none [&>div>div]:sm:rounded-none [&>div>div]:border-0 [&>div>div]:sm:border-0 [&>div>div]:shadow-none [&>div>div]:sm:shadow-none [&>div>div]:min-h-0 [&>div>div]:sm:min-h-0"
+                      style={{ width: 360, zoom: 0.689, minHeight: "145%" }}
+                    >
                       <CardRenderer card={card} />
                     </div>
                   </PhoneFrame>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
-/** Inline "claim your digitalsite.io/username" bar — routes to sign-in to continue. */
+/** Inline "claim your onlinecard.me/username" bar — routes to sign-in to continue. */
 export function ClaimUsername() {
   const router = useRouter();
   const [value, setValue] = useState("");
@@ -23,7 +23,7 @@ export function ClaimUsername() {
     <form onSubmit={onSubmit} className="w-full max-w-md">
       <div className="flex items-center rounded-full border border-border bg-surface p-1.5 pl-4 shadow-sm transition-colors focus-within:border-brand focus-within:ring-2 focus-within:ring-ring">
         <span className="shrink-0 select-none text-sm font-medium text-muted">
-          digitalsite.io/
+          onlinecard.me/
         </span>
         <input
           value={value}

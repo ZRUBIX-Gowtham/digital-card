@@ -121,7 +121,7 @@ export function QrCodeFeature() {
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15">
                   <Check className="h-3.5 w-3.5" />
                 </span>
-                <span className="whitespace-nowrap">{pro}</span>
+                <span>{pro}</span>
               </li>
             ))}
           </ul>

@@ -60,7 +60,7 @@ export default function TermsPage() {
         badge="Legal"
         title="Terms of"
         highlight="Service"
-        description="The ground rules for using Digital Site. We've kept them short and readable."
+        description="The ground rules for using OnlineCard. We've kept them short and readable."
       />
       <Section containerClassName="max-w-3xl">
         <p className="text-sm text-muted">Last updated: 2 July 2026</p>
