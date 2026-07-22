@@ -107,6 +107,7 @@ export default async function DashboardPage() {
                   />
                   <StatCard
                     className="col-span-2 sm:col-span-1"
+                    horizontalOnMobile
                     icon={
                       (card.theme ?? "light") === "dark" ? (
                         <Moon className="h-5 w-5" />
@@ -204,6 +205,7 @@ function StatCard({
   live,
   accent,
   className,
+  horizontalOnMobile,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -212,26 +214,49 @@ function StatCard({
   live?: boolean;
   accent?: string;
   className?: string;
+  /** Render icon-left / text-right on mobile so a full-width card fills its space. */
+  horizontalOnMobile?: boolean;
 }) {
+  const iconBadge = (
+    <span
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand"
+      style={accent ? { backgroundColor: `${accent}1a`, color: accent } : undefined}
+    >
+      {icon}
+    </span>
+  );
+
+  const liveBadge = live ? (
+    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+      Live
+    </span>
+  ) : null;
+
+  if (horizontalOnMobile) {
+    return (
+      <div
+        className={`flex items-center gap-4 rounded-2xl border border-border bg-surface p-5 sm:block ${className ?? ""}`}
+      >
+        {iconBadge}
+        <div className="min-w-0 flex-1 sm:mt-4">
+          <p className="truncate text-2xl font-bold text-foreground">{value}</p>
+          <p className="truncate text-sm font-medium text-foreground">{label}</p>
+          {hint && <p className="mt-0.5 truncate text-xs text-muted">{hint}</p>}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`rounded-2xl border border-border bg-surface p-5 ${className ?? ""}`}>
-      <div className="flex items-center justify-between">
-        <span
-          className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand"
-          style={accent ? { backgroundColor: `${accent}1a`, color: accent } : undefined}
-        >
-          {icon}
-        </span>
-        {live && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-            Live
-          </span>
-        )}
+      <div className="flex items-center justify-between gap-2">
+        {iconBadge}
+        {liveBadge}
       </div>
-      <p className="mt-4 text-2xl font-bold text-foreground">{value}</p>
-      <p className="text-sm font-medium text-foreground">{label}</p>
-      {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
+      <p className="mt-4 truncate text-2xl font-bold text-foreground">{value}</p>
+      <p className="truncate text-sm font-medium text-foreground">{label}</p>
+      {hint && <p className="mt-0.5 truncate text-xs text-muted">{hint}</p>}
     </div>
   );
 }
