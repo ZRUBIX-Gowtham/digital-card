@@ -412,10 +412,10 @@ export function SignatureStudio({
           <span className="h-3 w-3 rounded-full bg-[#28c840]" />
           <span className="ml-2 text-xs font-semibold text-slate-500">New Message</span>
         </div>
-        <div className="px-5 py-5">
-          <p className="mb-4 text-sm text-slate-600">Hi there,</p>
-          <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <div className="max-sm:[zoom:0.55] sm:[zoom:0.78]">
+        <div className="p-3 sm:p-5">
+          <p className="mb-3 text-xs sm:text-sm text-slate-600">Hi there,</p>
+          <div className="overflow-x-auto overflow-y-auto max-h-[320px] sm:max-h-none overscroll-contain [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300">
+            <div className="max-sm:[zoom:0.52] sm:[zoom:0.78]">
               <div 
                 ref={previewRef} 
                 dangerouslySetInnerHTML={{ __html: html }}
@@ -590,8 +590,8 @@ export function SignatureStudio({
             })}
           </div>
 
-          <div className="max-h-[380px] overflow-y-auto overscroll-contain rounded-xl pr-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="max-h-[650px] sm:max-h-[400px] overflow-y-auto overscroll-contain rounded-xl pr-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {visibleTemplates.map((t) => {
               const active = t.id === template;
               return (
@@ -604,29 +604,30 @@ export function SignatureStudio({
                     active ? "border-brand ring-2 ring-brand/30" : "border-border hover:border-brand/50"
                   }`}
                 >
-                  <div className="relative flex h-24 items-center justify-center overflow-hidden border-b border-border bg-white p-2">
-                    <div
-                      className="pointer-events-none"
-                      style={{ zoom: 0.34 } as React.CSSProperties}
-                      dangerouslySetInnerHTML={{ __html: renderSignature(previewCard, t.id, styleOpts) }}
-                    />
+                  <div className="relative flex min-h-[190px] sm:min-h-0 sm:h-28 items-center justify-start sm:justify-center overflow-hidden border-b border-border bg-white p-3">
+                    <div className="w-full h-full overflow-x-auto overflow-y-hidden flex items-center justify-start sm:justify-center py-1 px-0.5 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                      <div
+                        className="pointer-events-none shrink-0 max-sm:[zoom:0.44] sm:[zoom:0.35]"
+                        dangerouslySetInnerHTML={{ __html: renderSignature(previewCard, t.id, styleOpts) }}
+                      />
+                    </div>
                     {t.isNew && (
-                      <span className="absolute left-1.5 top-1.5 rounded-full bg-emerald-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow">
+                      <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-emerald-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow pointer-events-none">
                         New
                       </span>
                     )}
                     {t.premium && (
-                      <span className="absolute bottom-1.5 left-1.5 inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow">
+                      <span className="absolute bottom-2.5 left-2.5 z-10 inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow pointer-events-none">
                         <Crown className="h-2.5 w-2.5" /> Premium
                       </span>
                     )}
                     {active && (
-                      <span className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white shadow">
+                      <span className="absolute right-2.5 top-2.5 z-10 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white shadow pointer-events-none">
                         <Check className="h-3 w-3" />
                       </span>
                     )}
                   </div>
-                  <span className="bg-surface px-2.5 py-1.5 text-xs font-semibold text-foreground">
+                  <span className="bg-surface px-3 py-2 text-xs font-semibold text-foreground">
                     {t.name}
                   </span>
                 </button>

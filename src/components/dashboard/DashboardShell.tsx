@@ -84,7 +84,7 @@ export function DashboardShell({
   const mobileMoreNav = nav.slice(4);
 
   return (
-    <div className="min-h-screen bg-surface-2/40 lg:flex">
+    <div className="min-h-screen bg-surface-2/40 lg:flex max-w-full overflow-x-hidden">
       {/* ---------------- Desktop sidebar ---------------- */}
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-border bg-surface lg:flex">
         <div className="flex h-16 items-center border-b border-border px-5">
@@ -151,9 +151,9 @@ export function DashboardShell({
       </aside>
 
       {/* ---------------- Main column ---------------- */}
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 max-w-full overflow-x-hidden">
         {/* Mobile top bar */}
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-surface/80 px-4 backdrop-blur lg:hidden">
+        <header className="sticky top-0 z-30 flex h-14 w-full max-w-full items-center justify-between gap-3 border-b border-border bg-surface/80 px-4 backdrop-blur lg:hidden min-w-0">
           {hideMobileTabBar ? (
             // On the focused editor (no bottom tab bar), give an explicit way back.
             <Link
@@ -166,7 +166,7 @@ export function DashboardShell({
           ) : (
             <Logo />
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <ThemeToggle />
             <form action={signOutAction}>
               <button
@@ -180,7 +180,7 @@ export function DashboardShell({
           </div>
         </header>
 
-        <main className={`min-w-0 lg:pb-0 ${hideMobileTabBar ? "" : "pb-20"}`}>{children}</main>
+        <main className={`min-w-0 w-full max-w-full overflow-x-hidden lg:pb-0 ${hideMobileTabBar ? "" : "pb-20"}`}>{children}</main>
 
         <nav
           className={`fixed inset-x-0 bottom-0 z-50 border-t border-border bg-surface shadow-2xl lg:hidden ${hideMobileTabBar ? "hidden" : ""
