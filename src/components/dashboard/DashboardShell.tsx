@@ -76,9 +76,9 @@ export function DashboardShell({
   const hideMobileTabBar = pathname.startsWith("/dashboard/edit");
 
   const mobileMainNav = [
+    nav[0], // Home
     nav[1], // Edit
     nav[2], // Stats
-    nav[0], // Home
     nav[3], // Leads
   ];
   const mobileMoreNav = nav.slice(4);
@@ -180,12 +180,10 @@ export function DashboardShell({
           </div>
         </header>
 
-        {/* Extra bottom padding on mobile so content clears the tab bar */}
-        <main className={`min-w-0 lg:pb-0 ${hideMobileTabBar ? "" : "pb-24"}`}>{children}</main>
+        <main className={`min-w-0 lg:pb-0 ${hideMobileTabBar ? "" : "pb-20"}`}>{children}</main>
 
-        {/* Mobile bottom tab bar */}
         <nav
-          className={`fixed inset-x-0 bottom-0 z-50 border-t border-border bg-surface/95 backdrop-blur lg:hidden ${hideMobileTabBar ? "hidden" : ""
+          className={`fixed inset-x-0 bottom-0 z-50 border-t border-border bg-surface shadow-2xl lg:hidden ${hideMobileTabBar ? "hidden" : ""
             }`}
         >
           <div className="mx-auto flex max-w-md items-stretch justify-around px-1 pb-[env(safe-area-inset-bottom)]">
@@ -219,17 +217,28 @@ export function DashboardShell({
             })}
             
             {/* More Button */}
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-semibold text-muted transition-colors hover:text-foreground"
-            >
-              <span className="relative flex h-8 w-full items-center justify-center">
-                <span className="flex h-8 w-14 items-center justify-center rounded-full transition-colors">
-                  <Menu className="h-[18px] w-[18px]" />
-                </span>
-              </span>
-              More
-            </button>
+            {(() => {
+              const isMoreActive = mobileMoreNav.some((item) => isActive(item));
+              return (
+                <button
+                  onClick={() => setMobileMenuOpen(true)}
+                  className={`flex flex-1 flex-col items-center gap-1 py-2 text-[10px] font-semibold transition-colors ${
+                    isMoreActive ? "text-brand" : "text-muted hover:text-foreground"
+                  }`}
+                >
+                  <span className="relative flex h-8 w-full items-center justify-center">
+                    <span
+                      className={`flex h-8 w-14 items-center justify-center rounded-full transition-colors ${
+                        isMoreActive ? "bg-brand/10" : ""
+                      }`}
+                    >
+                      <Menu className="h-[18px] w-[18px]" />
+                    </span>
+                  </span>
+                  More
+                </button>
+              );
+            })()}
           </div>
         </nav>
 

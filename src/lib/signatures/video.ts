@@ -63,9 +63,10 @@ export function renderVideo(card: CardData, accent: string, opts?: SignatureStyl
   }
 
   // YouTube Video Block
-  const ytUrl = (card.youtubeVideos && card.youtubeVideos.length > 0) ? card.youtubeVideos[0] : "https://www.youtube.com/watch?v=-KflXKhN2Uc";
+  const ytUrl = (opts?.bannerButton && opts.bannerButton.trim()) ? opts.bannerButton.trim() : ((card.youtubeVideos && card.youtubeVideos.length > 0) ? card.youtubeVideos[0] : "https://www.youtube.com/watch?v=-KflXKhN2Uc");
   const ytId = getYoutubeId(ytUrl);
-  const thumbnail = ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : "https://placehold.co/160x90/f87171/ffffff/png?text=YouTube+Video";
+  const defaultThumb = ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : "https://placehold.co/160x90/f87171/ffffff/png?text=YouTube+Video";
+  const thumbnail = (opts?.bannerImage && opts.bannerImage.trim()) ? opts.bannerImage.trim() : defaultThumb;
   
   const videoTitle = opts?.bannerText || "5 Zoom, Virtual, or Team Building Activities";
   const channelName = card.company || card.name || "YouTube Channel";

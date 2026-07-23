@@ -45,14 +45,14 @@ export default async function DashboardPage() {
       cardSlug={card?.slug}
       unreadLeads={unreadLeads}
     >
-      <Container className="py-8 lg:py-10">
+      <Container className="px-4 py-6 sm:px-8 lg:py-10">
         {card ? (
           <>
-            <div className="grid gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
+            <div className="grid gap-5 sm:gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
               {/* ============ LEFT: content ============ */}
-              <div className="space-y-6">
+              <div className="space-y-5 sm:space-y-6">
                 {/* Greeting / hero banner */}
-                <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-brand/10 via-surface to-surface p-6 sm:p-8">
+                <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-brand/10 via-surface to-surface p-5 sm:p-8">
                   <span className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/10 blur-3xl" />
                   <div className="relative flex flex-wrap items-center justify-between gap-5">
                     <div className="min-w-0">
@@ -90,7 +90,7 @@ export default async function DashboardPage() {
                 </section>
 
                 {/* Stats row */}
-                <section className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
                   <StatCard
                     icon={<Eye className="h-5 w-5" />}
                     label="Profile views"
@@ -122,7 +122,7 @@ export default async function DashboardPage() {
                 </section>
 
                 {/* Card overview + share link + QR */}
-                <section className="rounded-2xl border border-border bg-surface p-6 sm:p-7">
+                <section className="rounded-2xl border border-border bg-surface p-5 sm:p-7">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="min-w-0">
                       <h2 className="text-lg font-semibold text-foreground">
@@ -236,7 +236,7 @@ function StatCard({
   if (horizontalOnMobile) {
     return (
       <div
-        className={`flex items-center gap-4 rounded-2xl border border-border bg-surface p-5 sm:block ${className ?? ""}`}
+        className={`flex items-center gap-4 rounded-2xl border border-border bg-surface p-4 sm:block sm:p-5 ${className ?? ""}`}
       >
         {iconBadge}
         <div className="min-w-0 flex-1 sm:mt-4">
@@ -249,7 +249,7 @@ function StatCard({
   }
 
   return (
-    <div className={`rounded-2xl border border-border bg-surface p-5 ${className ?? ""}`}>
+    <div className={`rounded-2xl border border-border bg-surface p-4 sm:p-5 ${className ?? ""}`}>
       <div className="flex items-center justify-between gap-2">
         {iconBadge}
         {liveBadge}

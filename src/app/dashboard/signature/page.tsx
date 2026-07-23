@@ -28,7 +28,7 @@ export default async function SignaturePage() {
       cardSlug={card.slug}
       unreadLeads={unreadLeads}
     >
-      <Container className="py-8 pb-0 lg:py-10 lg:pb-10">
+      <Container className="px-4 py-5 sm:px-6 sm:py-8 lg:py-10">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground">Mail signature</h1>
           <p className="mt-1 text-sm text-muted">

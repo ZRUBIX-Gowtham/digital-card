@@ -20,6 +20,7 @@ import {
   X,
   Crown,
   Megaphone,
+  Eye,
 } from "lucide-react";
 import type { CardData } from "@/types/card";
 import {
@@ -256,13 +257,14 @@ export function SignatureStudio({
   const [draft, setDraft] = useState<SignatureDraft>(initialDraft);
   // Designs with a photo showcase strip, and how many images each allows.
   const galleryTemplate =
-    template === "listings" || template === "boutique" || template === "circles" || template === "realtor";
+    template === "listings" || template === "boutique" || template === "circles" || template === "realtor" || template === "portfolio" || template === "premium";
   const galleryMax = template === "boutique" ? 10 : template === "circles" ? 5 : template === "realtor" ? 2 : 6;
   // Design-picker filter: show all designs, or only premium / free ones.
   const [filter, setFilter] = useState<"all" | "premium" | "free">("all");
   // Single-open accordion for the editor sections; opening one closes the rest.
   const [openPanel, setOpenPanel] = useState<string | null>("design");
   const togglePanel = (id: string) => setOpenPanel((cur) => (cur === id ? null : id));
+  const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
   const [dirty, setDirty] = useState(false);
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -311,6 +313,7 @@ export function SignatureStudio({
   }
   function pickTemplate(id: string) {
     setTemplate(id);
+    setOpenPanel("template-customization");
     mark();
   }
   function setField(key: keyof SignatureDraft, value: string) {
@@ -426,18 +429,18 @@ export function SignatureStudio({
   );
 
   const actionsBlock = (
-    <div className="space-y-4">
-      <div className="flex gap-2">
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={save}
           disabled={pending}
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50 cursor-pointer"
+          className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-5 text-sm font-semibold text-foreground transition-all hover:bg-surface-hover hover:border-brand/40 active:scale-[0.98] disabled:opacity-50 cursor-pointer whitespace-nowrap"
         >
           {pending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : saved ? (
-            <Check className="h-4 w-4 text-green-600" />
+            <Check className="h-4 w-4 text-emerald-500" />
           ) : (
             <Save className="h-4 w-4" />
           )}
@@ -446,14 +449,14 @@ export function SignatureStudio({
         <button
           type="button"
           onClick={copySignature}
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-brand px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90 cursor-pointer"
+          className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-brand via-indigo-600 to-brand px-5 text-sm font-bold text-white shadow-md shadow-brand/20 transition-all hover:opacity-95 active:scale-[0.98] cursor-pointer whitespace-nowrap"
         >
-          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          {copied ? <Check className="h-4 w-4 text-emerald-300" /> : <Copy className="h-4 w-4" />}
           {copied ? "Copied!" : "Copy signature"}
         </button>
       </div>
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <div className="flex items-center gap-2 rounded-2xl border border-red-200/80 bg-red-500/10 px-4 py-3 text-xs font-semibold text-red-500">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -507,15 +510,46 @@ export function SignatureStudio({
   );
 
   return (
-    <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(380px,440px)] lg:items-start">
-      
-      {/* Mobile-only Preview */}
-      <div className="block lg:hidden space-y-4">
-        {previewBlock}
+    <div>
+      {/* Mobile-only Segmented View Switcher */}
+      <div className="mb-5 flex rounded-2xl border border-border bg-surface-2 p-1 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileTab("edit")}
+          className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition-all cursor-pointer ${
+            mobileTab === "edit"
+              ? "bg-surface text-foreground shadow-sm"
+              : "text-muted hover:text-foreground"
+          }`}
+        >
+          <Pencil className="h-4 w-4" /> Edit Details
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab("preview")}
+          className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition-all cursor-pointer ${
+            mobileTab === "preview"
+              ? "bg-brand text-white shadow-sm"
+              : "text-muted hover:text-foreground"
+          }`}
+        >
+          <Eye className="h-4 w-4" /> Live Preview
+        </button>
       </div>
 
-      {/* ============================= LEFT: editor sections */}
-      <div className="min-w-0 space-y-6 lg:order-1">
+      <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(380px,440px)] lg:items-start">
+        
+        {/* Mobile View: Preview Mode */}
+        <div className={`space-y-6 lg:hidden ${mobileTab === "preview" ? "block" : "hidden"}`}>
+          {previewBlock}
+          {actionsBlock}
+          {howToBlock}
+        </div>
+
+        {/* ============================= LEFT: editor sections */}
+        <div className={`min-w-0 space-y-6 lg:order-1 ${mobileTab === "edit" ? "block" : "hidden lg:block"}`}>
+          {/* Mobile top actions */}
+          <div className="block lg:hidden">{actionsBlock}</div>
         {/* Design */}
         <Section
           icon={LayoutTemplate}
@@ -643,6 +677,241 @@ export function SignatureStudio({
           </div>
         </Section>
 
+        {/* Dynamic Template Customization Section — Panel #2 */}
+        <Section
+          icon={Megaphone}
+          title={`Template Options — ${signatureTemplates.find((t) => t.id === template)?.name ?? "Custom"}`}
+          desc={
+            template === "video"
+              ? "Set YouTube video URL, title, channel name & thumbnail."
+              : template === "exclusive"
+              ? "Edit quote text and bottom banner image."
+              : template === "disclaimer"
+              ? "Edit legal confidentiality notice."
+              : template === "portfolio"
+              ? "Edit website & email link box labels and showcase photos."
+              : galleryTemplate
+              ? "Edit showcase heading and product/listing photos."
+              : "Edit promo banner text, button label & banner background image."
+          }
+          open={openPanel === "template-customization"}
+          onToggle={() => togglePanel("template-customization")}
+        >
+          {template === "video" ? (
+            <div className="space-y-4">
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-muted">YouTube Video Link (URL)</span>
+                <input
+                  value={draft.bannerButton}
+                  onChange={(e) => setField("bannerButton", e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=-KflXKhN2Uc"
+                  className={inputCls}
+                />
+                <span className="mt-1 block text-[11px] text-muted">
+                  Paste any YouTube link (e.g. watch?v=...) — play button & thumbnail are generated automatically!
+                </span>
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-muted">Video Title</span>
+                <input
+                  value={draft.bannerText}
+                  onChange={(e) => setField("bannerText", e.target.value)}
+                  placeholder="5 Zoom, Virtual, or Team Building Activities"
+                  className={inputCls}
+                />
+              </label>
+              <PhotoUpload
+                value={draft.bannerImage}
+                onChange={(v) => setField("bannerImage", v)}
+                label="Custom Thumbnail Image (Optional)"
+              />
+            </div>
+          ) : template === "exclusive" ? (
+            <div className="space-y-4">
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-muted">Quote / Extra Text</span>
+                <textarea
+                  value={draft.bannerText}
+                  onChange={(e) => setField("bannerText", e.target.value)}
+                  rows={3}
+                  placeholder='"the time is always right to do what is right"\n- Martin Luther King'
+                  className={`${inputCls} resize-y`}
+                />
+              </label>
+              <PhotoUpload
+                value={draft.bannerImage}
+                onChange={(v) => setField("bannerImage", v)}
+                label="Bottom Banner Graphic / Image"
+              />
+            </div>
+          ) : template === "disclaimer" ? (
+            <div className="space-y-4">
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-muted">Legal Confidentiality Notice</span>
+                <textarea
+                  value={draft.bannerText}
+                  onChange={(e) => setField("bannerText", e.target.value)}
+                  rows={4}
+                  placeholder="IMPORTANT: The contents of this email and any attachments are confidential…"
+                  className={`${inputCls} resize-y`}
+                />
+              </label>
+            </div>
+          ) : template === "portfolio" ? (
+            <div className="space-y-4">
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-muted">Left Link Box Label (→ Website)</span>
+                <input
+                  value={draft.bannerText}
+                  onChange={(e) => setField("bannerText", e.target.value)}
+                  placeholder="My portfolio"
+                  className={inputCls}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-muted">Right Link Box Label (→ Email)</span>
+                <input
+                  value={draft.bannerButton}
+                  onChange={(e) => setField("bannerButton", e.target.value)}
+                  placeholder="Get in touch"
+                  className={inputCls}
+                />
+              </label>
+              <div className="border-t border-border pt-4">
+                <span className="mb-1.5 block text-xs font-semibold text-muted">Portfolio Showcase Photos</span>
+                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                  {draft.gallery.map((src, i) => (
+                    <div key={i} className="group relative aspect-[4/3] overflow-hidden rounded-lg border border-border">
+                      <img src={src} alt="" className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryImage(i)}
+                        aria-label="Remove image"
+                        className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-black/80 group-hover:opacity-100 cursor-pointer"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  {draft.gallery.length < galleryMax && (
+                    <label className="flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border bg-surface-2 text-muted transition-colors hover:border-brand/50 hover:text-brand">
+                      <ImagePlus className="h-5 w-5" />
+                      <span className="text-[11px] font-semibold">Add</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files ?? []);
+                          const remaining = Math.max(0, galleryMax - draft.gallery.length);
+                          const toRead = files.slice(0, remaining);
+                          e.target.value = "";
+                          if (toRead.length === 0) return;
+                          const collected: string[] = [];
+                          let done = 0;
+                          toRead.forEach((file) =>
+                            readImage(file, (url) => {
+                              collected.push(url);
+                              done += 1;
+                              if (done === toRead.length) addGalleryImages(collected);
+                            }),
+                          );
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-muted">Banner Text / Headline</span>
+                <input
+                  value={draft.bannerText}
+                  onChange={(e) => setField("bannerText", e.target.value)}
+                  placeholder="Get 20% off this month"
+                  className={inputCls}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-muted">Button Label</span>
+                <input
+                  value={draft.bannerButton}
+                  onChange={(e) => setField("bannerButton", e.target.value)}
+                  placeholder={template === "campaign" ? "Get a free quote" : "Call us"}
+                  className={inputCls}
+                />
+              </label>
+              
+              {galleryTemplate && (
+                <div className="border-t border-border pt-4">
+                  <span className="mb-1.5 block text-xs font-semibold text-muted">Showcase Gallery Strip</span>
+                  <label className="mb-3 block">
+                    <span className="mb-1 block text-[11px] font-medium text-muted">Gallery Heading</span>
+                    <input
+                      value={draft.galleryHeading}
+                      onChange={(e) => setField("galleryHeading", e.target.value)}
+                      placeholder="Check out our latest listings"
+                      className={inputCls}
+                    />
+                  </label>
+                  <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                    {draft.gallery.map((src, i) => (
+                      <div key={i} className="group relative aspect-[4/3] overflow-hidden rounded-lg border border-border">
+                        <img src={src} alt="" className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeGalleryImage(i)}
+                          aria-label="Remove image"
+                          className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-black/80 group-hover:opacity-100 cursor-pointer"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    {draft.gallery.length < galleryMax && (
+                      <label className="flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border bg-surface-2 text-muted transition-colors hover:border-brand/50 hover:text-brand">
+                        <ImagePlus className="h-5 w-5" />
+                        <span className="text-[11px] font-semibold">Add</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files ?? []);
+                            const remaining = Math.max(0, galleryMax - draft.gallery.length);
+                            const toRead = files.slice(0, remaining);
+                            e.target.value = "";
+                            if (toRead.length === 0) return;
+                            const collected: string[] = [];
+                            let done = 0;
+                            toRead.forEach((file) =>
+                              readImage(file, (url) => {
+                                collected.push(url);
+                                done += 1;
+                                if (done === toRead.length) addGalleryImages(collected);
+                              }),
+                            );
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <PhotoUpload
+                value={draft.bannerImage}
+                onChange={(v) => setField("bannerImage", v)}
+                label="Banner / Footer Graphic Image"
+              />
+            </div>
+          )}
+        </Section>
+
         {/* Your details */}
         <Section
           icon={Pencil}
@@ -750,172 +1019,6 @@ export function SignatureStudio({
           </div>
         </Section>
 
-        {/* Banner — for the Campaign / Banner / Premium designs. */}
-        {(template === "campaign" || template === "banner" || template === "premium") && (
-        <Section
-          icon={Megaphone}
-          title="Banner"
-          desc="Edit the promo banner and its button — and set your own banner image."
-          open={openPanel === "banner"}
-          onToggle={() => togglePanel("banner")}
-        >
-          <label className="mb-4 block">
-            <span className="mb-1 block text-xs font-semibold text-muted">Banner text</span>
-            <input
-              value={draft.bannerText}
-              onChange={(e) => setField("bannerText", e.target.value)}
-              placeholder="Get 20% off this month"
-              className={inputCls}
-            />
-          </label>
-          <label className="mb-4 block">
-            <span className="mb-1 block text-xs font-semibold text-muted">Button label</span>
-            <input
-              value={draft.bannerButton}
-              onChange={(e) => setField("bannerButton", e.target.value)}
-              placeholder={template === "campaign" ? "Get a free quote" : "Call us"}
-              className={inputCls}
-            />
-          </label>
-          <PhotoUpload
-            value={draft.bannerImage}
-            onChange={(v) => setField("bannerImage", v)}
-            label="Banner background image"
-          />
-          <p className="text-xs text-muted">
-            Optional — a wide graphic works best (falls back to the accent colour). The banner
-            text and button sit on top.
-          </p>
-        </Section>
-        )}
-
-        {/* CTA buttons — for the Portfolio design. */}
-        {template === "portfolio" && (
-        <Section
-          icon={Megaphone}
-          title="Call-to-action boxes"
-          desc="Label the two link boxes. They link to your website and email."
-          open={openPanel === "cta"}
-          onToggle={() => togglePanel("cta")}
-        >
-          <label className="mb-4 block">
-            <span className="mb-1 block text-xs font-semibold text-muted">Left box label (→ website)</span>
-            <input
-              value={draft.bannerText}
-              onChange={(e) => setField("bannerText", e.target.value)}
-              placeholder="My portfolio"
-              className={inputCls}
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-muted">Right box label (→ email)</span>
-            <input
-              value={draft.bannerButton}
-              onChange={(e) => setField("bannerButton", e.target.value)}
-              placeholder="Get in touch"
-              className={inputCls}
-            />
-          </label>
-        </Section>
-        )}
-
-        {/* Legal notice — for the Disclaimer design. */}
-        {template === "disclaimer" && (
-        <Section
-          icon={Megaphone}
-          title="Legal notice"
-          desc="Edit the confidentiality notice shown beneath the signature."
-          open={openPanel === "notice"}
-          onToggle={() => togglePanel("notice")}
-        >
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-muted">Notice text</span>
-            <textarea
-              value={draft.bannerText}
-              onChange={(e) => setField("bannerText", e.target.value)}
-              rows={4}
-              placeholder="IMPORTANT: The contents of this email and any attachments are confidential…"
-              className={`${inputCls} resize-y`}
-            />
-          </label>
-          <p className="mt-2 text-xs text-muted">
-            A standard confidentiality notice is shown until you set your own.
-          </p>
-        </Section>
-        )}
-
-        {/* Showcase images */}
-        {galleryTemplate && (
-        <Section
-          icon={Images}
-          title="Showcase images"
-          desc={`Add up to ${galleryMax} photos for the design's gallery strip.`}
-          open={openPanel === "showcase"}
-          onToggle={() => togglePanel("showcase")}
-        >
-          <label className="mb-4 block">
-            <span className="mb-1 block text-xs font-semibold text-muted">Strip heading</span>
-            <input
-              value={draft.galleryHeading}
-              onChange={(e) => setField("galleryHeading", e.target.value)}
-              placeholder="Check out our latest listings"
-              className={inputCls}
-            />
-          </label>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-            {draft.gallery.map((src, i) => (
-              <div
-                key={i}
-                className="group relative aspect-[4/3] overflow-hidden rounded-lg border border-border"
-              >
-                <img src={src} alt="" className="h-full w-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => removeGalleryImage(i)}
-                  aria-label="Remove image"
-                  className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-black/80 group-hover:opacity-100 cursor-pointer"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-            {draft.gallery.length < galleryMax && (
-              <label className="flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border bg-surface-2 text-muted transition-colors hover:border-brand/50 hover:text-brand">
-                <ImagePlus className="h-5 w-5" />
-                <span className="text-[11px] font-semibold">Add</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files ?? []);
-                    const remaining = Math.max(0, galleryMax - draft.gallery.length);
-                    const toRead = files.slice(0, remaining);
-                    e.target.value = "";
-                    if (toRead.length === 0) return;
-                    const collected: string[] = [];
-                    let done = 0;
-                    toRead.forEach((file) =>
-                      readImage(file, (url) => {
-                        collected.push(url);
-                        done += 1;
-                        if (done === toRead.length) addGalleryImages(collected);
-                      }),
-                    );
-                  }}
-                />
-              </label>
-            )}
-          </div>
-          {draft.gallery.length === 0 && (
-            <p className="mt-3 text-xs text-muted">
-              Sample images are shown until you add your own — upload photos to
-              replace the default gallery strip.
-            </p>
-          )}
-        </Section>
-        )}
       </div>
 
       {/* ============================= RIGHT: sticky preview + actions */}
@@ -933,6 +1036,7 @@ export function SignatureStudio({
         {howToBlock}
         
       </div>
+    </div>
     </div>
   );
 }
